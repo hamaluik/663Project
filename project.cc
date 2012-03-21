@@ -39,12 +39,18 @@ public:
 	void run(int argc, char **argv);
 	
 private:
+	// functions that define the system
+	// different for different types of problems
+	// (ie thermal problems vs. structural problems)
+	double systemValue(FEValues<2> &feValues, unsigned int i, unsigned int j, unsigned int q);
+	double rhsValue(FEValues<2> &feValues, unsigned int i, unsigned int q);
+
 	// helper functions
 	void mesh(int refinements, bool toFile = false);
 	void setup();
 	void assemble(int quadPoints);
 	void preStats();
-	void solve();
+	void solve(unsigned int n, double tolerance);
 	void results();
 	void postStats();
 	
@@ -65,6 +71,18 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
+// define the system portion of the weak formulation of the PDE here
+// (use quadrature points)
+double Project::systemValue(FEValues<2> &feValues, unsigned int i, unsigned int j, unsigned int q) {
+	return (feValues.shape_grad(i, q) * feValues.shape_grad(j, q) * feValues.JxW(q));
+}
+
+// define the RHS portion of the weak formulation of the PDE here
+// (use quadrature points)
+double Project::rhsValue(FEValues<2> &feValues, unsigned int i, unsigned int q) {
+	return (feValues.shape_value(i, q) * feValues.JxW(q));
+}
+
 // run the calculations
 void Project::run(int argc, char *argv[]) {
 	// default options
@@ -72,6 +90,8 @@ void Project::run(int argc, char *argv[]) {
 	bool meshToFile = true;
 	bool solveProblem = true;
 	int quadPoints = 2;
+	unsigned int nIterations = 1000;
+	double tolerance = 1e-12;
 	
 	// parse the command line
 	// skip the first argument
@@ -132,6 +152,8 @@ void Project::run(int argc, char *argv[]) {
 	std::cout << "Write mesh to file: " << (meshToFile ? "yes" : "no") << std::endl;
 	std::cout << "Perform solution: " << (solveProblem ? "yes" : "no") << std::endl;
 	std::cout << "Number of Gauss quadrature points: " << quadPoints << std::endl;
+	std::cout << "Maximum number of solution iterations: " << nIterations << std::endl;
+	std::cout << "Minimum normed residual tolerance: " << tolerance << std::endl;
 
 	// run the various steps
 	std::cout << "-- Preprocessing --" << std::endl;
@@ -157,7 +179,7 @@ void Project::run(int argc, char *argv[]) {
 	// solve the system
 	std::cout << "-- Solution --" << std::endl;
 	std::cout << "Solving system... " << std::flush;
-	solve();
+	solve(nIterations, tolerance);
 	std::cout << "done!" << std::endl;
 	std::cout << "Outputting solution results... ";
 	results();
@@ -243,21 +265,20 @@ void Project::assemble(int quadPoints) {
 		
 		// now loop over each component of the local system matrix
 		for(unsigned int i = 0; i < dofsPerCell; ++i) {
+			// deal with the system matrix
 			for(unsigned int j = 0; j < dofsPerCell; ++j) {
 				// now loop over the quadrature points
 				for(unsigned int q = 0; q < nQPoints; ++q) {
 					// and add the local contribution
 					// TODO: define system matrix weak form here
-					localMatrix(i, j) += (feValues.shape_grad(i, q) * feValues.shape_grad(j, q) * feValues.JxW(q));
+					localMatrix(i, j) += systemValue(feValues, i, j, q);
 				}
 			}
-		}
-		
-		// and loop over each component of the local RHS
-		for(unsigned int i = 0; i < dofsPerCell; ++i) {
+			
+			// deal with the RHS
 			// again loop over the quadrature points
 			for(unsigned int q = 0; q < nQPoints; ++q) {
-				localRHS(i) += (feValues.shape_value(i, q) * feValues.JxW(q));
+				localRHS(i) += rhsValue(feValues, i, q);
 			}
 		}
 		
@@ -286,11 +307,23 @@ void Project::assemble(int quadPoints) {
 	MatrixTools::apply_boundary_values(boundaryValues, systemMatrix, solution, systemRHS);
 }
 
+// print out stats about the mesh and problem before solving it
+void Project::preStats() {
+   std::cout << "Number of active cells: "
+             << triangulation.n_active_cells()
+             << std::endl
+             << "Total number of cells: "
+             << triangulation.n_cells()
+             << std::endl
+             << "Number of degrees of freedom: "
+             << dofHandler.n_dofs()
+             << std::endl;
+}
+
 // solve the system
-void Project::solve() {
+void Project::solve(unsigned int n, double tolerance) {
 	// control the CG solution
-	// either 1000 iteratures of a normed residual less than 1e-12
-	SolverControl solverControl(1000, 1e-12);
+	SolverControl solverControl(n, tolerance);
 	
 	// create the solver
 	SolverCG<> solver(solverControl);
@@ -317,19 +350,6 @@ void Project::results() {
 	// and write it to file
 	std::ofstream output("solution.gpl");
 	dataOut.write_gnuplot(output);
-}
-
-// print out stats about the mesh and problem before solving it
-void Project::preStats() {
-   std::cout << "Number of active cells: "
-             << triangulation.n_active_cells()
-             << std::endl
-             << "Total number of cells: "
-             << triangulation.n_cells()
-             << std::endl
-             << "Number of degrees of freedom: "
-             << dofHandler.n_dofs()
-             << std::endl;
 }
 
 // print out stats about the solution
