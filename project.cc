@@ -1,4 +1,4 @@
-// all our includes
+// deal.II includes
 #include <deal.II/grid/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/grid/grid_in.h>
@@ -21,12 +21,20 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/grid/grid_out.h>
+
+// C includes for getopt
+#include <stdio.h>
+#include <stdlib.h>
+
+// regular c++ includes
 #include <fstream>
 #include <iostream>
 #include <cmath>
 #include <vector>
 #include <map>
 #include <ctime>
+#include <cstdlib>
+#include <string>
 
 // make sure we're in the deal.ii namespace
 using namespace dealii;
@@ -35,21 +43,35 @@ using namespace dealii;
 class Project {
 public:
 	// initialize the constructor
-	Project() : fe(1), dofHandler(triangulation) {}
+	Project(double _Kx, double _Ky, double _A, double _B, double _T, char *_solutionFileName) : fe(1), dofHandler(triangulation) {
+		Kx = _Kx;
+		Ky = _Ky;
+		A = _A;
+		B = _B;
+		T = _T;
+		solutionFileName = _solutionFileName;
+	}
 	// the way to run the program!
-	void run(int argc, char **argv);
+	void run(int refinements, bool meshToFile, bool solveProblem, int quadPoints, unsigned int nIterations, double tolerance);
 
 private:
+	// problem constants
+	double Kx, Ky, A, B, T;
+
+	// misc. options
+	char *solutionFileName;
+
 	// functions that define the system
 	// different for different types of problems
 	// (ie thermal problems vs. structural problems)
 	double systemValue(FEValues<2> &feValues, unsigned int i, unsigned int j, unsigned int q);
 	double rhsValue(FEValues<2> &feValues, unsigned int i, unsigned int q);
+	double boundaryRHS(FEFaceValues<2> &feFaceValues, int boundary, unsigned int i, unsigned int q);
 
 	// helper functions
 	void mesh(int refinements, bool toFile);
 	void setup();
-	void assemble(int quadPoints, unsigned int boundary);
+	void assemble(int quadPoints);
 	void preStats();
 	void solve(unsigned int n, double tolerance);
 	void results();
@@ -69,99 +91,57 @@ private:
 	unsigned int solutionIterations;
 };
 
-// our application entry point
-int main(int argc, char *argv[]) {
-	Project project;
-	project.run(argc, argv);
-	return 0;
-}
-
 // define the system portion of the weak formulation of the PDE here
 // (use quadrature points)
 double Project::systemValue(FEValues<2> &feValues, unsigned int i, unsigned int j, unsigned int q) {
-	return (feValues.shape_grad(i, q) * feValues.shape_grad(j, q) * feValues.JxW(q));
+	// ((d/dx)phi_i * Kx * (d/dx)phi_j) + ((d/dy)phi_i * Ky * (d/dy)phi_j)
+	return	(feValues.shape_grad(i, q)[0] * Kx * feValues.shape_grad(j, q)[0] * feValues.JxW(q))
+	+	(feValues.shape_grad(i, q)[1] * Ky * feValues.shape_grad(j, q)[1] * feValues.JxW(q));
 }
 
 // define the RHS portion of the weak formulation of the PDE here
 // (use quadrature points)
 double Project::rhsValue(FEValues<2> &feValues, unsigned int i, unsigned int q) {
-	return (feValues.shape_value(i, q) * feValues.JxW(q));
+	// phi * A * x^2
+	double x = feValues.quadrature_point(q)[0];
+	double x2 = pow(x, 2);
+	return (feValues.shape_value(i, q) * A * x2 * feValues.JxW(q));
 }
 
-// run the calculations
-void Project::run(int argc, char *argv[]) {
-	// default options
-	int refinements = 0;
-	bool meshToFile = true;
-	bool solveProblem = true;
-	int quadPoints = 2;
-	unsigned int nIterations = 1000;
-	double tolerance = 1e-12;
-	unsigned int boundary = 3;
-
-	// parse the command line
-	// skip the first argument
-	int i = 1;
-	while(i < argc) {
-		// check for mesh refinement level
-		if(strcmp(argv[i], "-r") == 0) {
-			i++;
-			if(i >= argc) {
-				std::cout << "ERROR: Invalid option to parameter: -r" << std::endl;
-			}
-			else {
-				refinements = atoi(argv[i++]);
-			}
-		}
-		// check for outputting the mesh to file
-		else if(strcmp(argv[i++], "-smo") == 0) {
-			meshToFile = false;
-		}
-		// check to see if we want to actually solve it
-		else if(strcmp(argv[i++], "-dns") == 0) {
-			solveProblem = false;
-		}
-		// check for mesh refinement level
-		else if(strcmp(argv[i], "-qp") == 0) {
-			i++;
-			if(i >= argc) {
-				std::cout << "ERROR: Invalid option to parameter: -q" << std::endl;
-			}
-			else {
-				quadPoints = atoi(argv[i++]);
-			}
-		}
-		// check for which boundary to apply at
-		/*else if(strcmp(argv[i], "-b") == 0) {
-			i++;
-			if(i >= argc) {
-				std::cout << "ERROR: Invalid option to parameter: -b" << std::endl;
-			}
-			else {
-				boundary = atoi(argv[i++]);
-			}
-		}*/
-		// check for help
-		else if(strcmp(argv[i], "-?") == 0) {
-			// print some help!
-			std::cout << "Kenton's 663 Project - help" << std::endl;
-			std::cout << "Command line options:" << std::endl;
-			std::cout << "\t-r <refinements>\tset the number of mesh refinement levels" << std::endl;
-			std::cout << "\t-smo\tsuppress output of the mesh to file (eps)" << std::endl;
-			std::cout << "\t-dns\tdo not solve the problem, compute the mesh only" << std::endl;
-			std::cout << "\t-qp <num points>\tmanually define the number of gauss quadrature points to use" << std::endl;
-
-			// and stop
-			return;
-		}
-		// we don't know what this is!
-		else {
-			std::cout << "ERROR: unknown option: " << argv[i] << std::endl;
-			// stop, we hit a roadblock
-			return;
-		}
+// define the RHS contribution for boundaries
+double Project::boundaryRHS(FEFaceValues<2> &feFaceValues, int boundary, unsigned int i, unsigned int q) {
+	// deal with Neumann BC here!
+	double value = 0;
+	if(boundary == 1) {
+		// phi_i * B * (1 - y)
+		value = feFaceValues.shape_value(i, q) * B * (1 - feFaceValues.quadrature_point(q)[1]) * feFaceValues.JxW(q);
 	}
+	else if(boundary == 2) {
+		// phi_i * 0
+		value = 0;
+	}
+	return value;
+}
 
+// define functions for boundary values
+// (Diritchlet BC)
+template<int dim>
+class DirichletConst:public Function<dim> {
+private:
+	double V;
+public:
+	DirichletConst(double _V): Function<dim>() {
+		V = _V;
+	}
+	// ignore warnings about unused p & component
+	#pragma GCC diagnostic ignored "-Wunused-parameter"
+	double value(const Point<dim> &p, const unsigned int component = 0) const {
+		return V;
+	}
+};
+
+// run the calculations
+void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadPoints, unsigned int nIterations, double tolerance) {
 	// echo the options back to the user
 	std::cout << "-- Options --" << std::endl;
 	std::cout << "Mesh refinement set to: " << refinements << std::endl;
@@ -170,6 +150,15 @@ void Project::run(int argc, char *argv[]) {
 	std::cout << "Number of Gauss quadrature points: " << quadPoints << std::endl;
 	std::cout << "Maximum number of solution iterations: " << nIterations << std::endl;
 	std::cout << "Minimum normed residual tolerance: " << tolerance << std::endl;
+	if(solveProblem) std::cout << "Writing solution to file: " << solutionFileName << std::endl;
+
+	// echo back problem constants
+	std::cout << "-- Constants --" << std::endl;
+	std::cout << "Kx = " << Kx << " (W/mK)" << std::endl;
+	std::cout << "Ky = " << Ky << " (W/mK)" << std::endl;
+	std::cout << "A  = " << A << " (W/m^5)" << std::endl;
+	std::cout << "B  = " << B << " (W/m^3)" << std::endl;
+	std::cout << "T  = " << T << " (K)" << std::endl;
 
 	// suppress deal.ii solver output
 	//deallog.depth_console(0);
@@ -183,7 +172,7 @@ void Project::run(int argc, char *argv[]) {
 	setup();
 	std::cout << "done!" << std::endl;
 	std::cout << "Assembling the system matrix and RHS... ";
-	assemble(quadPoints, boundary);
+	assemble(quadPoints);
 	std::cout << "done!" << std::endl;
 
 	// output some info about the mesh
@@ -225,24 +214,21 @@ void Project::mesh(int refinements, bool toFile) {
 	// face 1 = right
 	// face 2 = bottom
 	// face 3 = top
-	//cell->face(0)->set_boundary_indicator(2);
-	//cell->face(2)->set_boundary_indicator(2);
-	//cell->face(3)->set_boundary_indicator(1);
-	cell->face(0)->set_boundary_indicator(1);
-	cell->face(1)->set_boundary_indicator(2);
-	cell->face(2)->set_boundary_indicator(3);
-	cell->face(3)->set_boundary_indicator(4);
+	cell->face(0)->set_boundary_indicator(1); // dO1
+	cell->face(2)->set_boundary_indicator(2); // dO2
+	cell->face(3)->set_boundary_indicator(2); // dO2
 	// now the second cell
 	++cell;
-	//cell->face(0)->set_boundary_indicator(2);
-	//cell->face(1)->set_boundary_indicator(2);
-	//cell->face(2)->set_boundary_indicator(3);
+	cell->face(2)->set_boundary_indicator(2); // dO2
+	cell->face(1)->set_boundary_indicator(2); // dO2
+	cell->face(3)->set_boundary_indicator(3); // dO3
 
 	// perform refinements
 	triangulation.refine_global(refinements);
 
 	// write it to file
 	if(toFile) {
+		// save as an eps for viewing
 		std::ofstream out("mesh.eps");
 		GridOut gridOut;
 		gridOut.write_eps(triangulation, out);
@@ -268,18 +254,26 @@ void Project::setup() {
 }
 
 // assemble the system matrix and RHS vector
-void Project::assemble(int quadPoints, unsigned int boundary) {
+void Project::assemble(int quadPoints) {
 	// use Gauss quadrature to solve the problem
 	// with a specified number of points given as an argument
 	QGauss<2> quadrature(quadPoints);
+	// use "faceQuadrature" to deal with Neumann BC
+	QGauss<1> faceQuadrature(quadPoints);
 
-	// ?
-	// use this to make sure only what we need gets updated between cells
-	FEValues<2> feValues(fe, quadrature, update_values | update_gradients | update_JxW_values);
+	// use FEValues and FEFaceValues to calculate values and gradients of
+	// shape functions and coordinates at each quadrature point
+	// use the flags to make sure only what we need gets updated between cells
+	FEValues<2> feValues(fe, quadrature, update_values | update_gradients | update_JxW_values | update_quadrature_points);
+	FEFaceValues<2> feFaceValues(fe, faceQuadrature, update_values | update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors);
 
 	// a couple of shortcuts for helping to define the system
+	// the total number of degrees of freedom per cell
 	const unsigned int dofsPerCell = fe.dofs_per_cell;
+	// number of quadrature points on the cells
 	const unsigned int nQPoints = quadrature.size();
+	// number of quadrature points on the boundaries
+	const unsigned int nFaceQPoints = faceQuadrature.size();
 
 	// initialize the local element and RHS formulations
 	FullMatrix<double> localMatrix(dofsPerCell, dofsPerCell);
@@ -301,21 +295,45 @@ void Project::assemble(int quadPoints, unsigned int boundary) {
 		localMatrix = 0;
 		localRHS = 0;
 
-		// now loop over each component of the local system matrix
-		for(unsigned int i = 0; i < dofsPerCell; ++i) {
-			// deal with the system matrix
-			for(unsigned int j = 0; j < dofsPerCell; ++j) {
-				// now loop over the quadrature points
-				for(unsigned int q = 0; q < nQPoints; ++q) {
+		// now loop over each component of the local system matrix (and RHS entries)
+		// loop over the quadrature points
+		for(unsigned int q = 0; q < nQPoints; ++q) {
+			// loop over "i" indices
+			for(unsigned int i = 0; i < dofsPerCell; ++i) {
+				// loop over "j" indices
+				for(unsigned int j = 0; j < dofsPerCell; ++j) {
+					// deal with the system matrix
 					// and add the local contribution
 					localMatrix(i, j) += systemValue(feValues, i, j, q);
 				}
-			}
 
-			// deal with the RHS
-			// again loop over the quadrature points
-			for(unsigned int q = 0; q < nQPoints; ++q) {
+				// deal with the RHS
 				localRHS(i) += rhsValue(feValues, i, q);
+			}
+		}
+
+		// deal with boundaries
+		// loop over all the faces on the cell
+		for(unsigned int face = 0; face<GeometryInfo<2>::faces_per_cell; ++face) {
+			// see if this face is on a boundary
+			if(cell->face(face)->at_boundary()) {
+				// yup, on a boundary
+				// store the boundary for easy access
+				int boundary = cell->face(face)->boundary_indicator();
+				// make sure it's one of ours
+				if(boundary == 1 || boundary == 2) {
+					// boundary 1, heat transfer (q)
+					// reinit the face values
+					feFaceValues.reinit(cell, face);
+					// loop over all the quadrature points
+					for(unsigned int q = 0; q < nFaceQPoints; ++q) {
+						// and loop over all the DOFS in the cell
+						for(unsigned int i = 0; i < dofsPerCell; ++i) {
+							// apply the Neumann BC that is on this boundary
+							localRHS(i) += boundaryRHS(feFaceValues, boundary, i, q);
+						}
+					}
+				}
 			}
 		}
 
@@ -333,15 +351,13 @@ void Project::assemble(int quadPoints, unsigned int boundary) {
 		}
 	}
 
-	// ok, the static system and RHS formulations are complete
-	// next, fill in the boundary conditions
+	// ok, the static system and RHS formulations (including Neumann conditions) are complete
+	// next, fill in the Dirichlet boundary conditions
 	// get the boundary values associated with specific DOFs
 	std::map<unsigned int, double> boundaryValues;
-	// apply the boundary values
-	VectorTools::interpolate_boundary_values(dofHandler, boundary, ZeroFunction<2>(), boundaryValues);
-	//VectorTools::interpolate_boundary_values(dofHandler, 1, ZeroFunction<2>(), boundaryValues);
-	//VectorTools::interpolate_boundary_values(dofHandler, 2, ZeroFunction<2>(), boundaryValues);
-	//VectorTools::interpolate_boundary_values(dofHandler, 3, ZeroFunction<2>(), boundaryValues);
+	// apply the Diritchlet boundary values
+	// boundary 3, const temperature
+	VectorTools::interpolate_boundary_values(dofHandler, 3, DirichletConst<2>(T), boundaryValues);
 	// and apply them to system and RHS formulations
 	MatrixTools::apply_boundary_values(boundaryValues, systemMatrix, solution, systemRHS);
 }
@@ -371,7 +387,7 @@ void Project::solve(unsigned int n, double tolerance) {
 	startTime = time(0);
 
 	// and solve that puppy!
-	// use an identity preconditioner
+	// use an identity preconditioner (nothing fancy necessary for this relatively simple problem)
 	solver.solve(systemMatrix, solution, systemRHS, PreconditionIdentity());
 
 	// various performance metrics
@@ -387,14 +403,14 @@ void Project::results() {
 	// get information from the DOFs
 	dataOut.attach_dof_handler(dofHandler);
 
-	// attach some data to those DOFs
+	// attach solution data to those DOFs
 	dataOut.add_data_vector(solution, "solution");
 
 	// transform the data into an intermediate format
 	dataOut.build_patches();
 
 	// and write it to file
-	std::ofstream output("solution.vtk");
+	std::ofstream output(solutionFileName);
 	dataOut.write_vtk(output);
 }
 
@@ -405,4 +421,96 @@ void Project::postStats() {
              << solveTime << std::endl
              << "Iterations needed to obtain convergence: "
              << solutionIterations << std::endl;
+}
+
+// our application entry point
+int main(int argc, char *argv[]) {
+	// default options
+	int refinements = 0;
+	bool meshToFile = false;
+	bool solveProblem = false;
+	int quadPoints = 3;
+	unsigned int nIterations = 1000;
+	double tolerance = 1e-12;
+	std::string solutionFile("solution.vtk");
+
+	// values / constants in the problem
+	double Kx = 15;
+	double Ky = 25;
+	double A = 5000;
+	double B = 50;
+	double T = 400;
+
+	// parse the command line
+	int opt;
+	while((opt = getopt(argc, argv, "h?r:fsq:i:t:x:y:A:T:")) != -1) {
+		switch(opt) {
+		case 'h':
+		case '?':
+		{
+			using namespace std;
+			cout << "Usage: " << argv[0] << " [OPTIONS] [SOLUTION.vtk]" << endl;
+			cout << "-- Options (defaults) --" << endl;
+			cout << "\t-?\t\tshow this help menu" << endl;
+			cout << "\t-r <level>\trefine the mesh <level> times (0)" << endl;
+			cout << "\t-f\t\twrite the generated mesh to file for visualization (false)" << endl;
+			cout << "\t-s\t\tsolve the problem (false)" << endl;
+			cout << "\t-q <num>\tuse <num> quadrature points for solution (3)" << endl;
+			cout << "\t-i <num>\tset the maximum number of CG iterations for solution (1000)" << endl;
+			cout << "\t-t <tol>\tset the tolerance for the residual (1e-12)" << endl;
+			cout << "\t-x <Kx>\t\tset the Kx value (15)" << endl;
+			cout << "\t-y <Ky>\t\tset the Ky value (25)" << endl;
+			cout << "\t-A <A>\t\tset the A value (5000)" << endl;
+			cout << "\t-B <B>\t\tset the B value (50)" << endl;
+			cout << "\t-T <temp>\tset the temperature at boundary 3 (400)" << endl;
+			return 0;
+		}
+		case 'r':
+			refinements = atoi(optarg);
+			break;
+		case 'f':
+			meshToFile = true;
+			break;
+		case 's':
+			solveProblem = true;
+			break;
+		case 'q':
+			quadPoints = atoi(optarg);
+			break;
+		case 'i':
+			nIterations = atoi(optarg);
+			break;
+		case 't':
+			tolerance = (double)atof(optarg);
+			break;
+		case 'x':
+			Kx = (double)atof(optarg);
+			break;
+		case 'y':
+			Ky = (double)atof(optarg);
+			break;
+		case 'A':
+			A = (double)atof(optarg);
+			break;
+		case 'B':
+			B = (double)atof(optarg);
+			break;
+		case 'T':
+			T = (double)atof(optarg);
+			break;
+		}
+	}
+
+	// deal with arguments
+	// only a single argument - the solution file name
+	if(optind < argc) {
+		solutionFile = argv[optind];
+	}
+
+	// create our project
+	Project project(Kx, Ky, A, B, T, (char *)solutionFile.c_str());
+
+	// and run it!
+	project.run(refinements, meshToFile, solveProblem, quadPoints, nIterations, tolerance);
+	return 0;
 }
