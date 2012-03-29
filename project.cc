@@ -91,7 +91,11 @@ private:
 	unsigned int solutionIterations;
 };
 
-// define the system portion of the weak formulation of the PDE here
+// *********************************************************************************//
+// ***** define the problem-specific system, RHS, and boundary conditions here *****//
+// *********************************************************************************//
+
+// define the system matrix portion of the weak formulation of the PDE here
 // (use quadrature points)
 double Project::systemValue(FEValues<2> &feValues, unsigned int i, unsigned int j, unsigned int q) {
 	// ((d/dx)phi_i * Kx * (d/dx)phi_j) + ((d/dy)phi_i * Ky * (d/dy)phi_j)
@@ -102,9 +106,11 @@ double Project::systemValue(FEValues<2> &feValues, unsigned int i, unsigned int 
 // define the RHS portion of the weak formulation of the PDE here
 // (use quadrature points)
 double Project::rhsValue(FEValues<2> &feValues, unsigned int i, unsigned int q) {
-	// phi * A * x^2
+	// separate this out for readability and debugging purposes
+	// let the compiler optimize it
 	double x = feValues.quadrature_point(q)[0];
 	double x2 = pow(x, 2);
+	// phi_i * A * x^2
 	return (feValues.shape_value(i, q) * A * x2 * feValues.JxW(q));
 }
 
@@ -113,8 +119,11 @@ double Project::boundaryRHS(FEFaceValues<2> &feFaceValues, int boundary, unsigne
 	// deal with Neumann BC here!
 	double value = 0;
 	if(boundary == 1) {
-		// phi_i * B * (1 - y)
-		value = feFaceValues.shape_value(i, q) * B * (1 - feFaceValues.quadrature_point(q)[1]) * feFaceValues.JxW(q);
+		// - phi_i * B * (1 - y)
+		// note: not dealing with normal vectors here
+		// since we know exactly where the boundary will always be
+		// and so its norm is a constant and can be simplified out
+		value = -1 * feFaceValues.shape_value(i, q) * B * (1 - feFaceValues.quadrature_point(q)[1]) * feFaceValues.JxW(q);
 	}
 	else if(boundary == 2) {
 		// phi_i * 0
@@ -124,16 +133,17 @@ double Project::boundaryRHS(FEFaceValues<2> &feFaceValues, int boundary, unsigne
 }
 
 // define functions for boundary values
-// (Diritchlet BC)
+// (constant Diritchlet BC)
 template<int dim>
 class DirichletConst:public Function<dim> {
 private:
 	double V;
 public:
+	// return a configurable constant value
 	DirichletConst(double _V): Function<dim>() {
 		V = _V;
 	}
-	// ignore warnings about unused p & component
+	// ignore warnings about unused p & component parameters
 	#pragma GCC diagnostic ignored "-Wunused-parameter"
 	double value(const Point<dim> &p, const unsigned int component = 0) const {
 		return V;
@@ -168,12 +178,6 @@ void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadP
 	std::cout << "Meshing domain... ";
 	mesh(refinements, meshToFile);
 	std::cout << "done!" << std::endl;
-	std::cout << "Setting up the system... ";
-	setup();
-	std::cout << "done!" << std::endl;
-	std::cout << "Assembling the system matrix and RHS... ";
-	assemble(quadPoints);
-	std::cout << "done!" << std::endl;
 
 	// output some info about the mesh
 	std::cout << "-- Mesh Stats --" << std::endl;
@@ -183,6 +187,14 @@ void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadP
 	if(!solveProblem) {
 		return;
 	}
+
+	// set the system up for solution
+	std::cout << "Setting up the system... ";
+	setup();
+	std::cout << "done!" << std::endl;
+	std::cout << "Assembling the system matrix and RHS... ";
+	assemble(quadPoints);
+	std::cout << "done!" << std::endl;
 
 	// solve the system
 	std::cout << "-- Solution --" << std::endl;
@@ -200,8 +212,11 @@ void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadP
 
 // generate a mesh of the domain
 void Project::mesh(int refinements, bool toFile) {
+	// TODO: create triangulation solely in code
+	// for this single problem (eliminate need for .ucd file!)
+
 	// define the geometry
-	// read it in from file
+	// read it in from file (for now)
 	GridIn<2> gridIn;
 	gridIn.attach_triangulation(triangulation);
 	std::ifstream inFile("project.ucd");
@@ -259,11 +274,14 @@ void Project::assemble(int quadPoints) {
 	// with a specified number of points given as an argument
 	QGauss<2> quadrature(quadPoints);
 	// use "faceQuadrature" to deal with Neumann BC
+	// NOTE: since it is a boundary, it is of a lower dimension
+	// i.e., it's a line, so it's in 1D space
 	QGauss<1> faceQuadrature(quadPoints);
 
 	// use FEValues and FEFaceValues to calculate values and gradients of
 	// shape functions and coordinates at each quadrature point
 	// use the flags to make sure only what we need gets updated between cells
+	// we will be needing the shape function values, gradients, the jacobians, and the quadrature values
 	FEValues<2> feValues(fe, quadrature, update_values | update_gradients | update_JxW_values | update_quadrature_points);
 	FEFaceValues<2> feFaceValues(fe, faceQuadrature, update_values | update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors);
 
@@ -288,7 +306,7 @@ void Project::assemble(int quadPoints) {
 	DoFHandler<2>::active_cell_iterator endCell = dofHandler.end();
 	// now actually loop through all the cells
 	for(; cell != endCell; ++cell) {
-		// reset the geometry for the cell
+		// reset the FE values information for this cell
 		feValues.reinit(cell);
 
 		// reset the local and RHS formulations
@@ -321,6 +339,8 @@ void Project::assemble(int quadPoints) {
 				// store the boundary for easy access
 				int boundary = cell->face(face)->boundary_indicator();
 				// make sure it's one of ours
+				// (note: we have "Neumann" conditions on BC 1 and 2
+				// the Dirichlet BC on BC 3 will be dealt with later
 				if(boundary == 1 || boundary == 2) {
 					// boundary 1, heat transfer (q)
 					// reinit the face values
@@ -381,6 +401,7 @@ void Project::solve(unsigned int n, double tolerance) {
 	SolverControl solverControl(n, tolerance);
 
 	// create the solver
+	// TODO: other solvers?
 	SolverCG<> solver(solverControl);
 
 	// measure solution time
@@ -404,7 +425,7 @@ void Project::results() {
 	dataOut.attach_dof_handler(dofHandler);
 
 	// attach solution data to those DOFs
-	dataOut.add_data_vector(solution, "Temperature");
+	dataOut.add_data_vector(solution, "Temperature (K)");
 
 	// transform the data into an intermediate format
 	dataOut.build_patches();
@@ -413,7 +434,7 @@ void Project::results() {
 	// create a file
 	std::ofstream output(solutionFileName);
 
-	// save it as a VTK for post-processing in Paraview!
+	// save the file for visualization
 	dataOut.write_vtk(output);
 }
 
@@ -422,7 +443,7 @@ void Project::postStats() {
 	double solveTime = difftime(endTime, startTime);
    std::cout << "Total solution time (s): "
              << solveTime << std::endl
-             << "Iterations needed to obtain convergence: "
+             << "CG iterations needed to obtain convergence: "
              << solutionIterations << std::endl;
 }
 
@@ -452,6 +473,7 @@ int main(int argc, char *argv[]) {
 		case 'h':
 		case '?':
 		{
+			// help menu
 			using namespace std;
 			cout << "Usage: " << argv[0] << " [OPTIONS] [SOLUTION.vtk]" << endl;
 			cout << "-- Options (defaults) --" << endl;
@@ -462,7 +484,7 @@ int main(int argc, char *argv[]) {
 			cout << "\t-q <num|auto>\tuse <num> quadrature points for solution (or auto-calculate based on order) (auto)" << endl;
 			cout << "\t-i <num>\tset the maximum number of CG iterations for solution (1000)" << endl;
 			cout << "\t-t <tol>\tset the tolerance for the residual (1e-12)" << endl;
-			cout << "\t-o <order>\tset the Lagrange polynomial order to (1)" << endl;
+			cout << "\t-o <order>\tset the Lagrange polynomial order to <order> (1)" << endl;
 			cout << "\t-x <Kx>\t\tset the Kx value (15)" << endl;
 			cout << "\t-y <Ky>\t\tset the Ky value (25)" << endl;
 			cout << "\t-A <A>\t\tset the A value (5000)" << endl;
@@ -470,15 +492,19 @@ int main(int argc, char *argv[]) {
 			cout << "\t-T <temp>\tset the temperature at boundary 3 (400)" << endl;
 			return 0;
 		}
+		// set refinement level
 		case 'r':
 			refinements = atoi(optarg);
 			break;
+		// write mesh to an eps file for viewing?
 		case 'f':
 			meshToFile = true;
 			break;
+		// should we actually go ahead and solve it?
 		case 's':
 			solveProblem = true;
 			break;
+		// manually select the number of quadrature points
 		case 'q':
 			if(strcmp(optarg, "auto") == 0) {
 				// if we need to auto-calculate the quadrature
@@ -489,27 +515,35 @@ int main(int argc, char *argv[]) {
 				quadPoints = atoi(optarg);
 			}
 			break;
+		// maximum number of CG iterations before things fail
 		case 'i':
 			nIterations = atoi(optarg);
 			break;
+		// minimum CG residual tolerance before things stop
 		case 't':
 			tolerance = (double)atof(optarg);
 			break;
+		// Lagrange polynomial order
 		case 'o':
 			order = atoi(optarg);
 			break;
+		// Kx constant
 		case 'x':
 			Kx = (double)atof(optarg);
 			break;
+		// Ky constant
 		case 'y':
 			Ky = (double)atof(optarg);
 			break;
+		// A constant
 		case 'A':
 			A = (double)atof(optarg);
 			break;
+		// B constant
 		case 'B':
 			B = (double)atof(optarg);
 			break;
+		// Temperature constant (along dO3)
 		case 'T':
 			T = (double)atof(optarg);
 			break;
@@ -517,18 +551,23 @@ int main(int argc, char *argv[]) {
 	}
 
 	// deal with arguments
-	// only a single argument - the solution file name
+	// only a single [optional] argument - the solution file name
 	if(optind < argc) {
 		solutionFile = argv[optind];
 	}
 
 	// auto-calculate quadrature points
 	if(quadPoints == -1) {
-		// num points = (1/2)*(max order)
-		quadPoints = (int)ceil(0.5 * (double)(2 * (order - 1) + 3));
+		// num points = (1/2)*(max order + 1)
+		// for quadratic polynomials we have:
+		//   (x^2+xy+y^2)' * x^2 * (x^2 + xy + y^2)'
+		// = (x + y) * x^2 + (x * y)
+		// => x^4
+		// would need (1/2)*(4 + 1) = 2.5 => 3
+		quadPoints = (int)ceil(0.5 * (double)(2 * (order - 1) + 2 + 1));
 	}
 
-	// create our project
+	// create our project object
 	Project project(order, Kx, Ky, A, B, T, (char *)solutionFile.c_str());
 
 	// and run it!
