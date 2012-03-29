@@ -43,7 +43,7 @@ using namespace dealii;
 class Project {
 public:
 	// initialize the constructor
-	Project(double _Kx, double _Ky, double _A, double _B, double _T, char *_solutionFileName) : fe(1), dofHandler(triangulation) {
+	Project(int order, double _Kx, double _Ky, double _A, double _B, double _T, char *_solutionFileName) : fe(order), dofHandler(triangulation) {
 		Kx = _Kx;
 		Ky = _Ky;
 		A = _A;
@@ -404,13 +404,16 @@ void Project::results() {
 	dataOut.attach_dof_handler(dofHandler);
 
 	// attach solution data to those DOFs
-	dataOut.add_data_vector(solution, "solution");
+	dataOut.add_data_vector(solution, "Temperature");
 
 	// transform the data into an intermediate format
 	dataOut.build_patches();
 
 	// and write it to file
+	// create a file
 	std::ofstream output(solutionFileName);
+
+	// save it as a VTK for post-processing in Paraview!
 	dataOut.write_vtk(output);
 }
 
@@ -429,12 +432,13 @@ int main(int argc, char *argv[]) {
 	int refinements = 0;
 	bool meshToFile = false;
 	bool solveProblem = false;
-	int quadPoints = 3;
+	int quadPoints = -1;
 	unsigned int nIterations = 1000;
 	double tolerance = 1e-12;
 	std::string solutionFile("solution.vtk");
 
 	// values / constants in the problem
+	int order = 1;
 	double Kx = 15;
 	double Ky = 25;
 	double A = 5000;
@@ -443,7 +447,7 @@ int main(int argc, char *argv[]) {
 
 	// parse the command line
 	int opt;
-	while((opt = getopt(argc, argv, "h?r:fsq:i:t:x:y:A:T:")) != -1) {
+	while((opt = getopt(argc, argv, "h?r:fsq:i:t:o:x:y:A:B:T:")) != -1) {
 		switch(opt) {
 		case 'h':
 		case '?':
@@ -455,9 +459,10 @@ int main(int argc, char *argv[]) {
 			cout << "\t-r <level>\trefine the mesh <level> times (0)" << endl;
 			cout << "\t-f\t\twrite the generated mesh to file for visualization (false)" << endl;
 			cout << "\t-s\t\tsolve the problem (false)" << endl;
-			cout << "\t-q <num>\tuse <num> quadrature points for solution (3)" << endl;
+			cout << "\t-q <num|auto>\tuse <num> quadrature points for solution (or auto-calculate based on order) (auto)" << endl;
 			cout << "\t-i <num>\tset the maximum number of CG iterations for solution (1000)" << endl;
 			cout << "\t-t <tol>\tset the tolerance for the residual (1e-12)" << endl;
+			cout << "\t-o <order>\tset the Lagrange polynomial order to (1)" << endl;
 			cout << "\t-x <Kx>\t\tset the Kx value (15)" << endl;
 			cout << "\t-y <Ky>\t\tset the Ky value (25)" << endl;
 			cout << "\t-A <A>\t\tset the A value (5000)" << endl;
@@ -475,13 +480,23 @@ int main(int argc, char *argv[]) {
 			solveProblem = true;
 			break;
 		case 'q':
-			quadPoints = atoi(optarg);
+			if(strcmp(optarg, "auto") == 0) {
+				// if we need to auto-calculate the quadrature
+				// points, set it to -1 so we know later
+				quadPoints = -1;
+			}
+			else {
+				quadPoints = atoi(optarg);
+			}
 			break;
 		case 'i':
 			nIterations = atoi(optarg);
 			break;
 		case 't':
 			tolerance = (double)atof(optarg);
+			break;
+		case 'o':
+			order = atoi(optarg);
 			break;
 		case 'x':
 			Kx = (double)atof(optarg);
@@ -507,8 +522,14 @@ int main(int argc, char *argv[]) {
 		solutionFile = argv[optind];
 	}
 
+	// auto-calculate quadrature points
+	if(quadPoints == -1) {
+		// num points = (1/2)*(max order)
+		quadPoints = (int)ceil(0.5 * (double)(2 * (order - 1) + 3));
+	}
+
 	// create our project
-	Project project(Kx, Ky, A, B, T, (char *)solutionFile.c_str());
+	Project project(order, Kx, Ky, A, B, T, (char *)solutionFile.c_str());
 
 	// and run it!
 	project.run(refinements, meshToFile, solveProblem, quadPoints, nIterations, tolerance);
