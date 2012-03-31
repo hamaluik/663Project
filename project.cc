@@ -178,6 +178,13 @@ void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadP
 	std::cout << "Meshing domain... ";
 	mesh(refinements, meshToFile);
 	std::cout << "done!" << std::endl;
+	// set the system up for solution
+	std::cout << "Setting up the system... ";
+	setup();
+	std::cout << "done!" << std::endl;
+	std::cout << "Assembling the system matrix and RHS... ";
+	assemble(quadPoints);
+	std::cout << "done!" << std::endl;
 
 	// output some info about the mesh
 	std::cout << "-- Mesh Stats --" << std::endl;
@@ -187,14 +194,6 @@ void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadP
 	if(!solveProblem) {
 		return;
 	}
-
-	// set the system up for solution
-	std::cout << "Setting up the system... ";
-	setup();
-	std::cout << "done!" << std::endl;
-	std::cout << "Assembling the system matrix and RHS... ";
-	assemble(quadPoints);
-	std::cout << "done!" << std::endl;
 
 	// solve the system
 	std::cout << "-- Solution --" << std::endl;
@@ -425,7 +424,7 @@ void Project::results() {
 	dataOut.attach_dof_handler(dofHandler);
 
 	// attach solution data to those DOFs
-	dataOut.add_data_vector(solution, "Temperature (K)");
+	dataOut.add_data_vector(solution, "Temperature");
 
 	// transform the data into an intermediate format
 	dataOut.build_patches();
