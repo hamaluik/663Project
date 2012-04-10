@@ -453,7 +453,7 @@ int main(int argc, char *argv[]) {
 	bool meshToFile = false;
 	bool solveProblem = false;
 	int quadPoints = -1;
-	unsigned int nIterations = 1000;
+	unsigned int nIterations = 10000;
 	double tolerance = 1e-12;
 	std::string solutionFile("solution.vtk");
 
@@ -481,7 +481,7 @@ int main(int argc, char *argv[]) {
 			cout << "\t-f\t\twrite the generated mesh to file for visualization (false)" << endl;
 			cout << "\t-s\t\tsolve the problem (false)" << endl;
 			cout << "\t-q <num|auto>\tuse <num> quadrature points for solution (or auto-calculate based on order) (auto)" << endl;
-			cout << "\t-i <num>\tset the maximum number of CG iterations for solution (1000)" << endl;
+			cout << "\t-i <num>\tset the maximum number of CG iterations for solution (10000)" << endl;
 			cout << "\t-t <tol>\tset the tolerance for the residual (1e-12)" << endl;
 			cout << "\t-o <order>\tset the Lagrange polynomial order to <order> (1)" << endl;
 			cout << "\t-x <Kx>\t\tset the Kx value (15)" << endl;
