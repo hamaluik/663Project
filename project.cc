@@ -17,10 +17,12 @@
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/compressed_sparsity_pattern.h>
-#include <deal.II/lac/solver_cg.h>
+//#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/grid/grid_out.h>
+#include <deal.II/base/timer.h>
 
 // C includes for getopt
 #include <stdio.h>
@@ -52,7 +54,7 @@ public:
 		solutionFileName = _solutionFileName;
 	}
 	// the way to run the program!
-	void run(int refinements, bool meshToFile, bool solveProblem, int quadPoints, unsigned int nIterations, double tolerance);
+	void run(int refinements, bool meshToFile, bool solveProblem, int quadPoints);
 
 private:
 	// problem constants
@@ -73,7 +75,7 @@ private:
 	void setup();
 	void assemble(int quadPoints);
 	void preStats();
-	void solve(unsigned int n, double tolerance);
+	void solve();
 	void results();
 	void postStats();
 
@@ -87,7 +89,7 @@ private:
 	Vector<double> systemRHS;
 
 	// internal states
-	time_t startTime, endTime;
+	double solutionTime;
 	unsigned int solutionIterations;
 };
 
@@ -151,15 +153,13 @@ public:
 };
 
 // run the calculations
-void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadPoints, unsigned int nIterations, double tolerance) {
+void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadPoints) {
 	// echo the options back to the user
 	std::cout << "-- Options --" << std::endl;
 	std::cout << "Mesh refinement set to: " << refinements << std::endl;
 	std::cout << "Write mesh to file: " << (meshToFile ? "yes" : "no") << std::endl;
 	std::cout << "Perform solution: " << (solveProblem ? "yes" : "no") << std::endl;
 	std::cout << "Number of Gauss quadrature points: " << quadPoints << std::endl;
-	std::cout << "Maximum number of solution iterations: " << nIterations << std::endl;
-	std::cout << "Minimum normed residual tolerance: " << tolerance << std::endl;
 	if(solveProblem) std::cout << "Writing solution to file: " << solutionFileName << std::endl;
 
 	// echo back problem constants
@@ -198,7 +198,7 @@ void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadP
 	// solve the system
 	std::cout << "-- Solution --" << std::endl;
 	std::cout << "Solving system... " << std::endl;
-	solve(nIterations, tolerance);
+	solve();
 	std::cout << "done!" << std::endl;
 	std::cout << "Outputting solution results... ";
 	results();
@@ -395,24 +395,22 @@ void Project::preStats() {
 }
 
 // solve the system
-void Project::solve(unsigned int n, double tolerance) {
-	// control the CG solution
-	SolverControl solverControl(n, tolerance);
-
-	// create the solver
-	// TODO: other solvers?
-	SolverCG<> solver(solverControl);
-
+void Project::solve() {	
 	// measure solution time
-	startTime = time(0);
-
-	// and solve that puppy!
-	// use an identity preconditioner (nothing fancy necessary for this relatively simple problem)
-	solver.solve(systemMatrix, solution, systemRHS, PreconditionIdentity());
-
-	// various performance metrics
-	endTime = time(0);
-	solutionIterations = solverControl.last_step() + 1;
+	Timer timer;
+	timer.start();
+	
+	// use direct UMFPACK solver
+	SparseDirectUMFPACK solver;
+	
+	// invert the system matrix with LU decomposition
+	solver.initialize(systemMatrix);
+	
+	// now multiply it out
+	solver.vmult(solution, systemRHS);
+	
+	// measure solution time
+	solutionTime = timer.stop();
 }
 
 // save results to file
@@ -439,11 +437,8 @@ void Project::results() {
 
 // print out stats about the solution
 void Project::postStats() {
-	double solveTime = difftime(endTime, startTime);
-   std::cout << "Total solution time (s): "
-             << solveTime << std::endl
-             << "CG iterations needed to obtain convergence: "
-             << solutionIterations << std::endl;
+	std::cout << "Total solution time (s): "
+			<< solutionTime << std::endl;
 }
 
 // our application entry point
@@ -453,8 +448,6 @@ int main(int argc, char *argv[]) {
 	bool meshToFile = false;
 	bool solveProblem = false;
 	int quadPoints = -1;
-	unsigned int nIterations = 10000;
-	double tolerance = 1e-12;
 	std::string solutionFile("solution.vtk");
 
 	// values / constants in the problem
@@ -467,7 +460,7 @@ int main(int argc, char *argv[]) {
 
 	// parse the command line
 	int opt;
-	while((opt = getopt(argc, argv, "h?r:fsq:i:t:o:x:y:A:B:T:")) != -1) {
+	while((opt = getopt(argc, argv, "h?r:fsq:o:x:y:A:B:T:")) != -1) {
 		switch(opt) {
 		case 'h':
 		case '?':
@@ -481,8 +474,6 @@ int main(int argc, char *argv[]) {
 			cout << "\t-f\t\twrite the generated mesh to file for visualization (false)" << endl;
 			cout << "\t-s\t\tsolve the problem (false)" << endl;
 			cout << "\t-q <num|auto>\tuse <num> quadrature points for solution (or auto-calculate based on order) (auto)" << endl;
-			cout << "\t-i <num>\tset the maximum number of CG iterations for solution (10000)" << endl;
-			cout << "\t-t <tol>\tset the tolerance for the residual (1e-12)" << endl;
 			cout << "\t-o <order>\tset the Lagrange polynomial order to <order> (1)" << endl;
 			cout << "\t-x <Kx>\t\tset the Kx value (15)" << endl;
 			cout << "\t-y <Ky>\t\tset the Ky value (25)" << endl;
@@ -513,14 +504,6 @@ int main(int argc, char *argv[]) {
 			else {
 				quadPoints = atoi(optarg);
 			}
-			break;
-		// maximum number of CG iterations before things fail
-		case 'i':
-			nIterations = atoi(optarg);
-			break;
-		// minimum CG residual tolerance before things stop
-		case 't':
-			tolerance = (double)atof(optarg);
 			break;
 		// Lagrange polynomial order
 		case 'o':
@@ -570,6 +553,6 @@ int main(int argc, char *argv[]) {
 	Project project(order, Kx, Ky, A, B, T, (char *)solutionFile.c_str());
 
 	// and run it!
-	project.run(refinements, meshToFile, solveProblem, quadPoints, nIterations, tolerance);
+	project.run(refinements, meshToFile, solveProblem, quadPoints);
 	return 0;
 }
