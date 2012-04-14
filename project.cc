@@ -243,7 +243,9 @@ void Project::mesh(int refinements, bool toFile) {
 	// write it to file
 	if(toFile) {
 		// save as an eps for viewing
-		std::ofstream out("mesh.eps");
+		char buffer[16];
+		sprintf(buffer, "mesh_r%i.eps", refinements);
+		std::ofstream out(buffer);
 		GridOut gridOut;
 		gridOut.write_eps(triangulation, out);
 	}
