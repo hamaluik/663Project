@@ -100,8 +100,8 @@ private:
 // (use quadrature points)
 double Project::systemValue(FEValues<2> &feValues, unsigned int i, unsigned int j, unsigned int q) {
 	// ((d/dx)phi_i * Kx * (d/dx)phi_j) + ((d/dy)phi_i * Ky * (d/dy)phi_j)
-	return	(feValues.shape_grad(i, q)[0] * Kx * feValues.shape_grad(j, q)[0] * feValues.JxW(q))
-	+	(feValues.shape_grad(i, q)[1] * Ky * feValues.shape_grad(j, q)[1] * feValues.JxW(q));
+	return	((feValues.shape_grad(i, q)[0] * Kx * feValues.shape_grad(j, q)[0])
+	+	(feValues.shape_grad(i, q)[1] * Ky * feValues.shape_grad(j, q)[1]) * feValues.JxW(q));
 }
 
 // define the RHS portion of the weak formulation of the PDE here
@@ -132,24 +132,6 @@ double Project::boundaryRHS(FEFaceValues<2> &feFaceValues, int boundary, unsigne
 	}
 	return value;
 }
-
-// define functions for boundary values
-// (constant Diritchlet BC)
-template<int dim>
-class DirichletConst:public Function<dim> {
-private:
-	double V;
-public:
-	// return a configurable constant value
-	DirichletConst(double _V): Function<dim>() {
-		V = _V;
-	}
-	// ignore warnings about unused p & component parameters
-	#pragma GCC diagnostic ignored "-Wunused-parameter"
-	double value(const Point<dim> &p, const unsigned int component = 0) const {
-		return V;
-	}
-};
 
 // run the calculations
 void Project::run(int refinements, bool meshToFile, bool solveProblem, int quadPoints) {
@@ -377,7 +359,7 @@ void Project::assemble(int quadPoints) {
 	std::map<unsigned int, double> boundaryValues;
 	// apply the Diritchlet boundary values
 	// boundary 3, const temperature
-	VectorTools::interpolate_boundary_values(dofHandler, 3, DirichletConst<2>(T), boundaryValues);
+	VectorTools::interpolate_boundary_values(dofHandler, 3, ConstantFunction<2>(T), boundaryValues);
 	// and apply them to system and RHS formulations
 	MatrixTools::apply_boundary_values(boundaryValues, systemMatrix, solution, systemRHS);
 }
