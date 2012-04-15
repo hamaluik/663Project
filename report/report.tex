@@ -16,22 +16,40 @@
 \usepackage{subfig}
 \usepackage{color}
 \usepackage{cancel}
-% \rhookswarrow
-% \rcurvearrowse\space}
+\usepackage{hyperref}
+
+\hypersetup{
+    bookmarks=true,         % show bookmarks bar?
+    unicode=false,          % non-Latin characters in Acrobat’s bookmarks
+    pdftoolbar=true,        % show Acrobat’s toolbar?
+    pdfmenubar=true,        % show Acrobat’s menu?
+    pdffitwindow=true,     % window fit to page when opened
+    pdfstartview={FitH},    % fits the width of the page to the window
+    pdftitle={Heat Conduction Through Rectangular Domain},    % title
+    pdfauthor={Kenton Hamaluik},     % author
+    pdfsubject={Finite Element Analysis Using Deal.II},   % subject of the document
+    pdfcreator={Kenton Hamaluik},   % creator of the document
+    pdfnewwindow=true,      % links in new window
+    colorlinks=true,       % false: boxed links; true: colored links
+    linkcolor=black,          % color of internal links
+    citecolor=black,        % color of links to bibliography
+    filecolor=black,      % color of file links
+    urlcolor=black           % color of external links
+}
 
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
  
 \lstset{ %
-	language=C++,                % the language of the code
-	basicstyle=\footnotesize,           % the size of the fonts that are used for the code
+	language=C++,                   % the language of the code
+	basicstyle=\footnotesize,       % the size of the fonts that are used for the code
 	numbers=left,                   % where to put the line-numbers
 	numberstyle=\tiny\color{gray},  % the style that is used for the line-numbers
 	stepnumber=1,                   % the step between two line-numbers. If it's 1, each line 
-								  % will be numbered
+								    % will be numbered
 	numbersep=5pt,                  % how far the line-numbers are from the code
-	backgroundcolor=\color{white},      % choose the background color. You must add \usepackage{color}
+	backgroundcolor=\color{white},  % choose the background color. You must add \usepackage{color}
 	showspaces=false,               % show spaces adding particular underscores
 	showstringspaces=false,         % underline spaces within strings
 	showtabs=false,                 % show tabs within strings adding particular underscores
@@ -42,17 +60,16 @@
 	tabsize=4,                      % sets default tabsize to 2 spaces
 	captionpos=t,                   % sets the caption-position to bottom
 	breaklines=true,                % sets automatic line breaking
-	breakatwhitespace=true,        % sets if automatic breaks should only happen at whitespace
-	title=\lstname,                   % show the filename of files included with \lstinputlisting;
-								  % also try caption instead of title
-	keywordstyle=\color{blue},          % keyword style
-	commentstyle=\color{dkgreen},       % comment style
-	stringstyle=\color{mauve},         % string literal style
-	escapeinside={\%*}{*)},            % if you want to add a comment within your code
-	morekeywords={*,...},               % if you want to add more keywords to the set
+	breakatwhitespace=true,         % sets if automatic breaks should only happen at whitespace
+	title=\lstname,                 % show the filename of files included with \lstinputlisting;
+								    % also try caption instead of title
+	keywordstyle=\color{blue},      % keyword style
+	commentstyle=\color{dkgreen},   % comment style
+	stringstyle=\color{mauve},      % string literal style
+	escapeinside={\%*}{*)},         % if you want to add a comment within your code
+	morekeywords={*,...},           % if you want to add more keywords to the set
 }
 
-\setlength{\parindent}{0pt}
 \renewcommand{\arraystretch}{1.5}
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
@@ -65,8 +82,8 @@
 \HRule \\[0.5cm]
 \textsc{\LARGE MecE 663}\\
 \textsc{\Large Project:}\\
-\textsc{\large Heat Conduction Through Rectangular Domain}\\[-0.2cm]
-\HRule \\[1cm]
+\textsc{\large Heat Conduction Through Rectangular Domain}\\
+\HRule \\[0.7cm]
 Kenton Hamaluik\\[0.5cm]
 April 18, 2012\\
 Instructor: Dr. Marc Secanell Gallart\\
@@ -93,12 +110,19 @@ University of Alberta
 \label{sec:definition}
 The goal of this problem is determine the temperature distribution throughout a rectangular domain as given in figure \ref{fig:domain}. The temperature distribution is defined by the partial differential equation (PDE) given in equation \ref{equ:pde}.
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{domain.png}
+	\caption{Problem domain and boundaries}
+	\label{fig:domain}
+\end{figure}
+
 \begin{equation}
 \label{equ:pde}
 \frac{\partial}{\partial x}\left(k_x\frac{\partial T}{\partial x}\right) + \frac{\partial}{\partial y}\left(k_y\frac{\partial T}{\partial y}\right) + f(x,y) = 0
 \end{equation}
 
-Where the problem domain is $\Omega \in \unit{\left(\left(0,0\right),\left(1,2.5\right)\right)}{m}$, $f(x,y)$ is as defined in equation \ref{equ:f}, and the constant thermal conductivity coefficients are given as:
+\noindent where the problem domain is $\Omega \in \unit{\left(\left(0,0\right),\left(1,2.5\right)\right)}{m}$, $f(x,y)$ is as defined in equation \ref{equ:f}, and the constant thermal conductivity coefficients are given as:
 \[k_x(x,y)=\unit{15}{W/m\usk K}\]
 \[k_y(x,y)=\unit{25}{W/m\usk K}\]
 \begin{equation}
@@ -106,10 +130,10 @@ Where the problem domain is $\Omega \in \unit{\left(\left(0,0\right),\left(1,2.5
 f(x,y) = Ax^2 \unit{}{W/m^3}
 \end{equation}
 
-In equation \ref{equ:f}, $A$ represents a variable heat generation term whose effect is to be investigated with:
+\noindent In equation \ref{equ:f}, $A$ represents a variable heat generation term whose effect is to be investigated with:
 \[A \in \unit{(0, 5)}{kW/m^5}\]
 
-In this problem, there are three distinct sets of boundary conditions (illustrated in figure \ref{fig:bc}):
+\noindent In this problem, there are three distinct sets of boundary conditions (illustrated in figure \ref{fig:bc}):
 \begin{enumerate}
 	\item A variable heat flux along $\partial \Omega_1$ subject to the following conditions:
 	\[k_x\frac{\partial T}{\partial x} = B \left(1-y\right) \unit{}{W/m^2}\]
@@ -134,7 +158,7 @@ To develop the weak weak form of the problem, the PDE given in equation \ref{equ
 -\int_\Omega w \left[\frac{\partial}{\partial x}\left(k_x\frac{\partial T}{\partial x}\right) + \frac{\partial}{\partial y}\left(k_y\frac{\partial T}{\partial y}\right)\right] d\Omega = \int_\Omega wf(x,y)d\Omega
 \end{equation}
 
-Now we must apply integration by parts (in 2-dimensions) to ``weaken'' the second-derivative terms in equation \ref{equ:wintpde} such that both the solution and weighting functions belong to $H_1$, noting that in general:
+\noindent Now we must apply integration by parts (in 2-dimensions) to ``weaken'' the second-derivative terms in equation \ref{equ:wintpde} such that both the solution and weighting functions belong to $H_1$, noting that in general:
 \[\int_\Omega w \frac{\partial G}{\partial x}d\Omega = -\int_\Omega \frac{\partial w}{\partial x}Gd\Omega + \oint_\Gamma n_xwGd\Gamma\]
 \noindent where in our equation (in the $x$ direction),
 \[G = k_x\frac{\partial T}{\partial x}\]
@@ -145,7 +169,7 @@ n_x = \left(1,0\right) \cdot \vec{n} \\
 n_y = \left(0,1\right) \cdot \vec{n} \\
 \vec{n} = \text{surface norm of } \Gamma
 \end{array}\]
-Such that:
+\noindent Such that:
 \[\begin{split}
 	\int_\Omega w \frac{\partial G}{\partial x}d\Omega &= -\int_\Omega \frac{\partial w}{\partial x}Gd\Omega + \oint_\Gamma n_xwGd\Gamma \\
 	\int_\Omega w \frac{\partial}{\partial x}\left(k_x\frac{\partial T}{\partial x}\right)d\Omega &= -\int_\Omega \frac{\partial w}{\partial x}\left(k_x\frac{\partial T}{\partial x}\right)d\Omega + \oint_\Gamma n_xw\left(k_x\frac{\partial T}{\partial x}\right)d\Gamma
@@ -153,7 +177,7 @@ Such that:
 \noindent We note that this formulation is indentical in the $y$ direction, so:
 \[\int_\Omega w \frac{\partial}{\partial y}\left(k_y\frac{\partial T}{\partial y}\right)d\Omega = -\int_\Omega \frac{\partial w}{\partial y}\left(k_x\frac{\partial T}{\partial y}\right)d\Omega + \oint_\Gamma n_yw\left(k_y\frac{\partial T}{\partial y}\right)d\Gamma\]
 
-We can now combine these results with problem given in equation \ref{equ:wintpde} to weaken the second-derivative terms:
+\noindent We can now combine these results with problem given in equation \ref{equ:wintpde} to weaken the second-derivative terms:
 \[-\left\{-\int_\Omega \left[\frac{\partial w}{\partial x}\left(k_x\frac{\partial T}{\partial x}\right) + \frac{\partial w}{\partial y}\left(k_y\frac{\partial T}{\partial y}\right) \right]d\Omega + \oint_\Gamma \left[n_xw\left(k_x\frac{\partial T}{\partial x}\right) + n_yw\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma\right\} = \int_\Omega wf(x,y)d\Omega\]
 \[\int_\Omega \left[\frac{\partial w}{\partial x}\left(k_x\frac{\partial T}{\partial x}\right) + \frac{\partial w}{\partial y}\left(k_y\frac{\partial T}{\partial y}\right) \right]d\Omega - \oint_\Gamma \left[n_xw\left(k_x\frac{\partial T}{\partial x}\right) + n_yw\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma = \int_\Omega wf(x,y)d\Omega\]
 \noindent Leaving us with the weak formulation of the problem:
@@ -179,7 +203,7 @@ w(x,y) = \displaystyle\sum\limits_{i=1}^m \omega_i \phi_i(x,y) \\
 \int_\Omega \left[\displaystyle\sum\limits_{i=1}^m \omega_i\frac{\partial \phi_i}{\partial x}\left(k_x\displaystyle\sum\limits_{j=1}^m\tau_j\frac{\partial \phi_j}{\partial x}\right) + \displaystyle\sum\limits_{i=1}^m \omega_i\frac{\partial \phi_i}{\partial y}\left(k_y\displaystyle\sum\limits_{j=1}^m\tau_j\frac{\partial \phi_j}{\partial y}\right) \right]d\Omega = \int_\Omega \displaystyle\sum\limits_{i=1}^m \omega_i\phi_if(x,y)d\Omega
 \]
 
-This constitutes a system of equations which can be respresented using matrix notation: $\mathbf{K}\mathbf{\tau}=\mathbf{F}$ where each equation is defined as:
+\noindent This constitutes a system of equations which can be respresented using matrix notation: $\mathbf{K}\mathbf{\tau}=\mathbf{F}$ where each equation is defined as:
 \[
 \int_\Omega \left[ \omega_i\frac{\partial \phi_i}{\partial x}\left(k_x\tau_j\frac{\partial \phi_j}{\partial x}\right) +  \omega_i\frac{\partial \phi_i}{\partial y}\left(k_y\tau_j\frac{\partial \phi_j}{\partial y}\right) \right]d\Omega = \int_\Omega \omega_i\phi_if(x,y)d\Omega
 \]
@@ -190,12 +214,12 @@ Since the $\omega_i$s and $\tau_j$s are all constant, we can cancel the $\omega_
 \[
 \left\{\int_\Omega \left[ \frac{\partial \phi_i}{\partial x}\left(k_x\frac{\partial \phi_j}{\partial x}\right) + \frac{\partial \phi_i}{\partial y}\left(k_y\frac{\partial \phi_j}{\partial y}\right) \right]d\Omega\right\}\tau_j = \int_\Omega \phi_if(x,y)d\Omega
 \]
-Such that the elements of the $\mathbf{K}$ system matrix are defined as:
+\noindent such that the elements of the $\mathbf{K}$ system matrix are defined as:
 \begin{equation}
 \label{equ:Kij}
 \boxed{\mathbf{K}_{ij} = \int_\Omega \left[ \frac{\partial \phi_i}{\partial x}\left(k_x\frac{\partial \phi_j}{\partial x}\right) + \frac{\partial \phi_i}{\partial y}\left(k_y\frac{\partial \phi_j}{\partial y}\right) \right]d\Omega}
 \end{equation}
-and the elements of $\mathbf{F}$ right hand side are defined as:
+\noindent and the elements of $\mathbf{F}$ right hand side are defined as:
 \begin{equation}
 \label{equ:Fi}
 \boxed{\mathbf{F}_i = \int_\Omega \phi_if(x,y)d\Omega}
@@ -208,16 +232,16 @@ Now we consider the Bubnov-Galerkin approximation of the Neumann boundary condit
 \[
 F_\Gamma = \oint_\Gamma \left[n_xw\left(k_x\frac{\partial T}{\partial x}\right) + n_yw\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
 \]
-Applying the Bubnov-Galerkin approximation functions given in equation \ref{equ:bubnov-galerkin} to the above boundary terms yields:
+\noindent Applying the Bubnov-Galerkin approximation functions given in equation \ref{equ:bubnov-galerkin} to the above boundary terms yields:
 \[
 F_\Gamma = \oint_\Gamma \left[n_x\displaystyle\sum\limits_{i=1}^m\omega_i\phi_i\left(k_x\frac{\partial T}{\partial x}\right) + n_y\displaystyle\sum\limits_{i=1}^m\omega_i\phi_i\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
 \]
-Where this is a system of equations and $\omega_i$ will cancel out as before:
+\noindent where this is a system of equations and $\omega_i$ will cancel out as before:
 \[
 F_{\Gamma,i} = \oint_\Gamma \left[n_x\phi_i\left(k_x\frac{\partial T}{\partial x}\right) + n_y\phi_i\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
 \]
 
-This integral may then be further simplified by considering each boundary region in turn, with the right hand side $F_i$ (given in equation \ref{equ:Fi}) being modified by $F_{\Gamma,i}$ as:
+\noindent This integral may then be further simplified by considering each boundary region in turn, with the right hand side $F_i$ (given in equation \ref{equ:Fi}) being modified by $F_{\Gamma,i}$ as:
 \[
 \boxed{F_i = F_i + \displaystyle\sum\limits_{b=1}^3 F_{\Gamma_b,i}}
 \]
@@ -237,7 +261,7 @@ Such that the extra right hand side contribution along this boundary is:
 Along boundary 2, there is a prescibed insulated boundary, meaning that:
 \[k_x\frac{\partial T}{\partial x} = \unit{0}{W/m^2}\]
 \[k_y\frac{\partial T}{\partial y} = \unit{0}{W/m^2}\]
-Thus straight away we can see that there will be zero contribution from the boundary terms along boundary 2:
+\noindent Thus straight away we can see that there will be zero contribution from the boundary terms along boundary 2:
 \[
 F_{\Gamma_2,i} = \oint_\Gamma \left[n_x\phi_i\cancelto{0}{\left(k_x\frac{\partial T}{\partial x}\right)} + n_y\phi_i\cancelto{0}{\left(k_y\frac{\partial T}{\partial y}\right)}\right]d\Gamma
 \]
@@ -249,7 +273,7 @@ F_{\Gamma_2,i} = \oint_\Gamma \left[n_x\phi_i\cancelto{0}{\left(k_x\frac{\partia
 \subsubsection{Boundary 3 (Constant Temperature)}
 Along boundary 3, there is a constant Dirichlet boundary condition, meaning the temperature along this boundary is already given. When a Dirichlet boundary condition is present, the solution does not have to be approximated and so the weighting function at the boundary is 0:
 \[\phi_i = 0\]
-Similar to the result in boundary 2 then, we can see that there will be zero contribution from the boundary terms along boundary 3:
+\noindent Similar to the result in boundary 2 then, we can see that there will be zero contribution from the boundary terms along boundary 3:
 \[
 F_{\Gamma_3,i} = \oint_\Gamma \left[n_x\cancelto{0}{\phi_i}\left(k_x\frac{\partial T}{\partial x}\right) + n_y\cancelto{0}{\phi_i}\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
 \]
@@ -261,7 +285,7 @@ F_{\Gamma_3,i} = \oint_\Gamma \left[n_x\cancelto{0}{\phi_i}\left(k_x\frac{\parti
 \subsection{Numerical Integration Formulation}
 
 \section{Discretization of the Domain}
-The domain can naturally be split in to two regions to accomodate the unique set of boundaries for this problem (see figure \ref{fig:bc} for boundary location information). A ``coarse'' grid which defines two elements and their appropriate boundaries is given in figure \ref{fig:grid_r0}.
+The domain can naturally be split in to two regions to accomodate the unique set of boundaries for this problem (see figure \ref{fig:domain} for boundary location information). A ``coarse'' grid which defines two elements and their appropriate boundaries is given in figure \ref{fig:grid_r0}.
 
 \begin{figure}[H]
 	\centering
@@ -274,16 +298,16 @@ Such a coarse grid provides very little detail about the solution and is a poor 
 
 \begin{figure}[H]
 	\centering
-	\subfloat[1 mesh refinement, 8 elements]{\label{fig:mesh_1}\includegraphics[width=0.5\textwidth]{mesh_r1.pdf}} \\
-	\subfloat[2 mesh refinements, 32 elements]{\label{fig:mesh_2}\includegraphics[width=0.5\textwidth]{mesh_r2.pdf}} \\
-	\subfloat[3 mesh refinements, 128 elements]{\label{fig:mesh_3}\includegraphics[width=0.5\textwidth]{mesh_r3.pdf}} \\
-	\subfloat[4 mesh refinements, 512 elements]{\label{fig:mesh_4}\includegraphics[width=0.5\textwidth]{mesh_r4.pdf}}
+	\subfloat[1 mesh refinement, 8 elements]{\label{fig:mesh_1}\includegraphics[width=0.45\textwidth]{mesh_r1.pdf}} \;
+	\subfloat[2 mesh refinements, 32 elements]{\label{fig:mesh_2}\includegraphics[width=0.45\textwidth]{mesh_r2.pdf}} \\
+	\subfloat[3 mesh refinements, 128 elements]{\label{fig:mesh_3}\includegraphics[width=0.45\textwidth]{mesh_r3.pdf}} \;
+	\subfloat[4 mesh refinements, 512 elements]{\label{fig:mesh_4}\includegraphics[width=0.45\textwidth]{mesh_r4.pdf}}
 	\caption{Resulting meshes from various levels of mesh refinements}
 	\label{fig:meshs}
 \end{figure}
 
 \section{Computer Implementation of the Problem}
-Using the open-source C++ finite-element library \emph{deal.II}, a program was created to implement equations \ref{} over the meshes given in figure \ref{fig:meshs}. The complete source code package is included in appendix \ref{app:source}, and has been successfully compiled and run using deal.II version 7.1.0 on linux (Ubuntu 12.04) compiled with UMFPACK support.
+Using the open-source C++ finite-element library \emph{deal.II}, a program was created to implement equations \ref{} over the meshes given in figure \ref{fig:meshs}. The complete source code package is included in appendix \ref{app:source} and has been successfully compiled and run using deal.II version 7.1.0 on linux (Ubuntu 12.04) compiled with UMFPACK support.
 
 Once the program is appropriately compiled and linked, it is run through the command line, making use of gnu-style command line options and parameters. These options and parameters are outlined in table \ref{tab:commandlineoptions}.
 
@@ -297,7 +321,7 @@ Flag & Description \\
 \hline
 	-h & show the help menu \\
 	-? & show the help menu \\
-	-r $<n>$ & refine the coarse mesh (given in figure \ref{fig:grid_r0}) $n$ times \\
+	-r $<n>$ & refine the coarse mesh (given in figure \ref{fig:grid_r0}) $<n>$ times \\
 	-f & if this flag is specified, the mesh geometry will be saved to a .eps file for visualization \\
 	-s & if this flag is specified, the program will solve the problem (it will \textbf{not} solve anything otherwise) \\
 	-q $<n>$ & manually specify the number of quadrature points to use in the calculation \\
@@ -312,7 +336,7 @@ Flag & Description \\
 \end{tabular}
 \end{table}
 
-In order to run the program and evaluate the model, a file called ``project.ucd'' which defines the coarse mesh illustrated in figure \ref{fig:grid_r0} must be present in the same directory as the executable. This is a simple, common-format mesh definition file that was created by hand specifically for the geometry laid out in figure \ref{fig:}. A choice was made to define the geometry outside of the program in this file so that changes in the scale or relative dimensions of the domain can be modified without requiring the program to be re-compiled each time a change is made (the choice to define parameters through the command line was made for the same reasons).
+In order to run the program and evaluate the model, a file called ``project.ucd'' which defines the coarse mesh illustrated in figure \ref{fig:grid_r0} must be present in the same directory as the executable. This is a simple, common-format mesh definition file that was created by hand specifically for the geometry laid out in figure \ref{fig:domain}. A choice was made to define the geometry outside of the program in this file so that changes in the scale or relative dimensions of the domain can be modified without requiring the program to be re-compiled each time a change is made (the choice to define parameters through the command line was made for the same reasons).
 
 The project is then invoked as such:
 \vspace{-6mm}
@@ -346,7 +370,7 @@ Similary, to produce a visualization of the highest mesh refinement examined (4 
 Note that in these examples, only the mesh is assembled and output for visualization --- the program does not attempt to solve anything.
 
 \subsubsection{Solving the Problem}
-The ``default problem'' is defined as solving equations \ref{} over the coarse domain illustrated in figure \ref{fig:grid_r0}, first-order Lagrange interpolation functions, $A=\unit{5000}{W/m^5}$ and all other constants at their values defined in section \ref{sec:definition}. This ``default problem'' can be solved with its output being saved in ``solution.vtk'' by executing the following command:
+The ``default problem'' is defined as solving equations \ref{} over the coarse domain illustrated in figure \ref{fig:grid_r0}, using first-order Lagrange interpolation functions, setting $A=\unit{5000}{W/m^5}$ and all other constants at their values defined in section \ref{sec:definition}. This ``default problem'' can be solved with its output being saved in ``solution.vtk'' by executing the following command:
 \vspace{-6mm}
 \begin{lstlisting}[numbers=none,frame=none,language=bash]
 ./project -s
@@ -367,15 +391,15 @@ Using the same mesh refinement level as above, but this time investigating p-ref
 \end{lstlisting}
 \vspace{1mm}
 
-Assuming this level of refinement is acceptable, we can experiment with changing the value of $A$ as part of a parametric study, outputting the solution for a given $A$ to different files for later post-processing and analysis. The following commands will generate a total of 6 different solution files, each one exploring a different value for the constant $A$ ranging from \unit{0}{W/m^5} -- \unit{5000}{W/m^5} while using a mesh with 128 quadratic elements.
+Assuming this level of refinement is acceptable, we can experiment with changing the value of $A$ as part of a parametric study, outputting the solution for a given $A$ to different files for later post-processing and analysis. The following commands will generate a total of 6 different solution files, each one exploring a different value for the constant $A$ ranging from \unit{0}{W/m^5} -- \unit{5000}{W/m^5} while using a mesh with 128 linear elements.
 \vspace{-6mm}
 \begin{lstlisting}[numbers=none,frame=none,language=bash]
-./project -r 3 -o 2 -s -A 0 solution_a0k.vtk
-./project -r 3 -o 2 -s -A 1000 solution_a1k.vtk
-./project -r 3 -o 2 -s -A 2000 solution_a2k.vtk
-./project -r 3 -o 2 -s -A 3000 solution_a3k.vtk
-./project -r 3 -o 2 -s -A 4000 solution_a4k.vtk
-./project -r 3 -o 2 -s -A 5000 solution_a5000.vtk
+./project -r 3 -s -A 0 solution_a0k.vtk
+./project -r 3 -s -A 1000 solution_a1k.vtk
+./project -r 3 -s -A 2000 solution_a2k.vtk
+./project -r 3 -s -A 3000 solution_a3k.vtk
+./project -r 3 -s -A 4000 solution_a4k.vtk
+./project -r 3 -s -A 5000 solution_a5k.vtk
 \end{lstlisting}
 \vspace{1mm}
 
@@ -386,8 +410,82 @@ A drastic alteration of the posited problem can also be solved without having to
 \end{lstlisting}
 \vspace{1mm}
 
+\section{Convergence Studies}
+In order to study the effect of h and p refinement on the solution, a single point in the problem domain was selected which represented a large gradient location in the solution based off an initial higher level of refinement where the mesh was refined 4 times resulting in 512 elements and used 2nd order Lagrange interpolation polynomials (2,145 degrees of freedom). The location of this point is at \unit{(2,0.35)}{m} and can be visualized as the white cross in figure \ref{fig:refinepoint}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.75\textwidth]{refinepoint.png}
+	\caption{Location of temperature probe for mesh refinement studies}
+	\label{fig:refinepoint}
+\end{figure}
+
+\subsection{H-Refinement}
+\label{sec:h_refine}
+To study the effect of h-refinement on the solution (that is, the effect of using greater numbers of smaller elements to approximate the solution), the temperature at the given point was calculated using meshes of varying densities as illustrated in figures \ref{fig:grid_r0} and \ref{fig:meshs} using linear Lagrange interpolation elements. The temperature of the selected point was then plotted as a function of the number of degrees of freedom in the model to obtain the convergence plot illustrated in figure \ref{fig:h_refinement}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{h_refinement.pdf}
+	\caption{H-Refinement of problem}
+	\label{fig:h_refinement}
+\end{figure}
+
+As can be seen in figure \ref{fig:h_refinement}, increasing the mesh density (and subsequently, the number of degrees of freedom) results in an increased temperature up to a point. It is extremely important to note the ``law of diminishing returns here'' --- once the number of degrees of freedom reaches a certain level, refining the mesh will provide no significant change in the temperature at the queried point. In this model, this point happens with approximately 3 h-refinements resulting in 128 elements or 153 degrees of freedom. We can see very plainly from this plot that nearly quadrupling the number of degrees of freedom past this point will not significantly change the approximated temperature distribution in the domain. Therefore, we can say that the model has sufficiently converged after 3 h-refinements, or with 153 degrees of freedom approximating the temperature distribution.
+
+\subsection{P-Refinement}
+To study the effect of p-refinement on the solution (that is, the effect of using higher-order Lagrange interpolation polynomials to approximate the solution), the temperature at the given point was calculated using polynomials of order 1 -- 4 for various levels of h-refinement (the same h-refinements that were performed in section \ref{sec:h_refine}). The temperature of the selected point was then plotted as a function of the number of degrees of freedom resulting in the model (higher order Lagrange interpolation polynomials result in larger numbers of degrees of freedom) to obtain the plot illustrated in figure \ref{fig:p_refinement}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{p_refinement.pdf}
+	\caption{P-Refinement of problem}
+	\label{fig:p_refinement}
+\end{figure}
+
+As can be seen in figure \ref{fig:p_refinement}, increasing the polynomial order (and subsequently, the number of degrees of freedom) had no significant effect on the approximative power of the model. In fact, the only convergence of the problem was found through h-refinement, suggesting that p-refinement is not only not useful for this problem, but is also detrimental as it only serves to increase the number of degrees of freedom (and subsequently, the solution time) while doing nothing to increase the approximative power of the model.
+
 \section{Parametric Study on the Effect of $A$}
-Derp
+Using 128 linear Lagrange elements resulting in 153 degrees of freedom throughout the domain, the effect of varying the constant $A$ from \unit{0}{W/m^5} -- \unit{5000}{W/m^5} was examined. Examining the temperature distribution across a constant temperature scale, the progressive change of the temperature due to progressive changes in $A$ can be visualized. The result of this analysis is presented in figure \ref{fig:paraconst}.
+
+\begin{figure}[H]
+	\centering
+	\subfloat[$A=\unit{0}{W/m^5}$]{\label{fig:csa0}\includegraphics[width=0.5\textwidth]{cscale_sol_r3_o1_a0k.png}} 
+	\subfloat[$A=\unit{1000}{W/m^5}$]{\label{fig:csa1}\includegraphics[width=0.5\textwidth]{cscale_sol_r3_o1_a1k.png}} \\
+	\subfloat[$A=\unit{2000}{W/m^5}$]{\label{fig:csa2}\includegraphics[width=0.5\textwidth]{cscale_sol_r3_o1_a2k.png}} 
+	\subfloat[$A=\unit{3000}{W/m^5}$]{\label{fig:csa3}\includegraphics[width=0.5\textwidth]{cscale_sol_r3_o1_a3k.png}} \\
+	\subfloat[$A=\unit{4000}{W/m^5}$]{\label{fig:csa4}\includegraphics[width=0.5\textwidth]{cscale_sol_r3_o1_a4k.png}} 
+	\subfloat[$A=\unit{5000}{W/m^5}$]{\label{fig:csa5}\includegraphics[width=0.5\textwidth]{cscale_sol_r3_o1_a5k.png}} \\
+	\caption{Effect of varying $A$ on temperature distribution (with constant scale)}
+	\label{fig:paraconst}
+\end{figure}
+
+As figure \ref{fig:paraconst} shows, as we increase the coefficient of the heat generation term, the problem domain experiences a a more significant temperature distribution, with the greatest temperature being concentrated in the bottom-right corner of the domain. This is to be expected as the heat generation term goes as $x^2$ (so the right side of the domain will generate significantly more heat than the left side) while there are adiabatic conditions along the bottom and right boundaries of the model. Further, this high temperature is concentrated along the bottom of the domain due to the prescribed temperature of \unit{400}{K} given at boundary 3 (along the right-top edge of the model).
+
+For more detailed information about the temperature distribution throughout the domain, the results can be examined using different temperature scales for each value of $A$, as shown in figure \ref{fig:para}.
+
+\begin{figure}[H]
+	\centering
+	\subfloat[$A=\unit{0}{W/m^5}$]{\label{fig:sa0}\includegraphics[width=0.5\textwidth]{sol_r3_o1_a0k.png}} 
+	\subfloat[$A=\unit{1000}{W/m^5}$]{\label{fig:sa1}\includegraphics[width=0.5\textwidth]{sol_r3_o1_a1k.png}} \\
+	\subfloat[$A=\unit{2000}{W/m^5}$]{\label{fig:sa2}\includegraphics[width=0.5\textwidth]{sol_r3_o1_a2k.png}} 
+	\subfloat[$A=\unit{3000}{W/m^5}$]{\label{fig:sa3}\includegraphics[width=0.5\textwidth]{sol_r3_o1_a3k.png}} \\
+	\subfloat[$A=\unit{4000}{W/m^5}$]{\label{fig:sa4}\includegraphics[width=0.5\textwidth]{sol_r3_o1_a4k.png}} 
+	\subfloat[$A=\unit{5000}{W/m^5}$]{\label{fig:sa5}\includegraphics[width=0.5\textwidth]{sol_r3_o1_a5k.png}} \\
+	\caption{Effect of varying $A$ on temperature distribution}
+	\label{fig:para}
+\end{figure}
+
+As can be seen in figure \ref{fig:para}, when $A$ is not \unit{0}{W/m^5} the temperature distribution assumes an identical shape distribution, with only the magnitude of the temperature changing. However, as can be seen in figure \ref{fig:sa0}, when there is 0 heat generation throughout the domain, the temperature distribution is rather different, with heat visibly flowing through the domain from boundary 3 to boundary 1. In Figure \ref{fig:sa0}, it is also easy to see the effect of the variable heat flux boundary condition:
+\[k_x\frac{\partial T}{\partial x} = B \left(1-y\right) \unit{}{W/m^2}\]
+\noindent This shows us that there will be the greatest amount of heat flux leaving the problem domain where $y=0$ along boundary 1, which is indeed the coldest location in the domain when $A=\unit{0}{W/m^5}$.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{a_study.pdf}
+	\caption{Temperature profile along $x$ axis at $y=\unit{0.5}{m}$}
+	\label{fig:a_study}
+\end{figure}
 
 \pagebreak
 \appendix
@@ -400,8 +498,11 @@ Derp
 
 \section{Source Code Listings}
 \label{app:source}
+\subsection{Project Source File}
 \lstinputlisting[title=project.cc]{../project.cc}
+\subsection{Geometry Definition File}
 \lstinputlisting[title=project.ucd]{../project.ucd}
+\subsection{Makefile}
 \lstinputlisting[title=Makefile,language=make]{../Makefile}
 
 \end{document}
