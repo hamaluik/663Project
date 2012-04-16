@@ -124,7 +124,7 @@ double Project::boundaryRHS(FEFaceValues<2> &feFaceValues, int boundary, unsigne
 		// note: not dealing with normal vectors here
 		// since we know exactly where the boundary will always be
 		// and so its norm is a constant and can be simplified out
-		value = -1 * feFaceValues.shape_value(i, q) * B * (1 - feFaceValues.quadrature_point(q)[1]) * feFaceValues.JxW(q);
+		value = -1 * B * feFaceValues.shape_value(i, q) * (1 - feFaceValues.quadrature_point(q)[1]) * feFaceValues.JxW(q);
 	}
 	else if(boundary == 2) {
 		// phi_i * 0

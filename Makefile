@@ -1,6 +1,5 @@
 # $Id: Makefile 22601 2010-11-04 03:26:19Z bangerth $
 
-
 # For the small projects Makefile, you basically need to fill in only
 # four fields.
 #
@@ -16,7 +15,6 @@ target = project
 # and to `off' when running production computations.
 debug-mode = off
 
-
 # As third field, we need to give the path to the top-level deal.II
 # directory. You need to adjust this to your needs. Since this path is
 # probably the most often needed one in the Makefile internals, it is
@@ -25,15 +23,11 @@ debug-mode = off
 # required for most other parameters, as e.g. in $(target).
 D = ../../
 
-
 # The last field specifies the names of data and other files that
 # shall be deleted when calling `make clean'. Object and backup files,
 # executables and the like are removed anyway. Here, we give a list of
 # files in the various output formats that deal.II supports.
 clean-up-files = *.eps *.vtk *~
-
-
-
 
 #
 #
@@ -45,7 +39,6 @@ clean-up-files = *.eps *.vtk *~
 # settings
 include $D/common/Make.global_options
 
-
 # Since the whole project consists of only one file, we need not
 # consider difficult dependencies. We only have to declare the
 # libraries which we want to link to the object file. deal.II has two
@@ -53,7 +46,6 @@ include $D/common/Make.global_options
 # application and one for optimized mode.
 libs.g   := $(lib-deal2.g)
 libs.o   := $(lib-deal2.o)
-
 
 # We now use the variable defined above to switch between debug and
 # optimized mode to select the set of libraries to link with. Included
@@ -68,7 +60,6 @@ else
   libraries = $(target).$(OBJEXT) $(libs.o)
 endif
 
-
 # Now comes the first production rule: how to link the single object
 # file produced from the single C++ file into the executable. Since
 # this is the first rule in the Makefile, it is the one `make' selects
@@ -76,7 +67,6 @@ endif
 $(target)$(EXEEXT) : $(libraries)
 	@echo ============================ Linking $@
 	@$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
-
 
 # To make running the application somewhat independent of the actual
 # program name, we usually declare a rule `run' which simply runs the
@@ -88,7 +78,6 @@ run: $(target)$(EXEEXT)
 	@echo ============================ Running $<
 	@./$(target)$(EXEEXT)
 
-
 # As a last rule to the `make' program, we define what to do when
 # cleaning up a directory. This usually involves deleting object files
 # and other automatically created files such as the executable itself,
@@ -96,7 +85,6 @@ run: $(target)$(EXEEXT)
 # diverse, you needed to declare them at the top of this file.
 clean:
 	-rm -f *.$(OBJEXT) *~ Makefile.dep $(target)$(EXEEXT) $(clean-up-files)
-
 
 # Since we have not yet stated how to make an object file from a C++
 # file, we should do so now. Since the many flags passed to the
@@ -110,12 +98,10 @@ clean:
 	@echo "==============optimized===== $(<F)  ->  $@"
 	@$(CXX) $(CXXFLAGS.o) -c $< -o $@
 
-
 # The following statement tells make that the rules `run' and `clean'
 # are not expected to produce files of the same name as Makefile rules
 # usually do.
 .PHONY: run clean
-
 
 # Finally there is a rule which you normally need not care much about:
 # since the executable depends on some include files from the library,

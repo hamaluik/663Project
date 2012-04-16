@@ -16,6 +16,7 @@
 \usepackage{subfig}
 \usepackage{color}
 \usepackage{cancel}
+\usepackage{pdfpages}
 \usepackage{hyperref}
 
 \hypersetup{
@@ -133,7 +134,7 @@ f(x,y) = Ax^2 \unit{}{W/m^3}
 \noindent In equation \ref{equ:f}, $A$ represents a variable heat generation term whose effect is to be investigated with:
 \[A \in \unit{(0, 5)}{kW/m^5}\]
 
-\noindent In this problem, there are three distinct sets of boundary conditions (illustrated in figure \ref{fig:bc}):
+\noindent In this problem, there are three distinct sets of boundary conditions (illustrated in figure \ref{fig:domain}):
 \begin{enumerate}
 	\item A variable heat flux along $\partial \Omega_1$ subject to the following conditions:
 	\[k_x\frac{\partial T}{\partial x} = B \left(1-y\right) \unit{}{W/m^2}\]
@@ -230,31 +231,31 @@ Since the $\omega_i$s and $\tau_j$s are all constant, we can cancel the $\omega_
 \subsection{Application of the Weak Form Neumann Boundary Conditions}
 Now we consider the Bubnov-Galerkin approximation of the Neumann boundary conditions that will be applied to the right hand side, through the boundary term expression:
 \[
-F_\Gamma = \oint_\Gamma \left[n_xw\left(k_x\frac{\partial T}{\partial x}\right) + n_yw\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
+\mathbf{F}_\Gamma = \oint_\Gamma \left[n_xw\left(k_x\frac{\partial T}{\partial x}\right) + n_yw\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
 \]
 \noindent Applying the Bubnov-Galerkin approximation functions given in equation \ref{equ:bubnov-galerkin} to the above boundary terms yields:
 \[
-F_\Gamma = \oint_\Gamma \left[n_x\displaystyle\sum\limits_{i=1}^m\omega_i\phi_i\left(k_x\frac{\partial T}{\partial x}\right) + n_y\displaystyle\sum\limits_{i=1}^m\omega_i\phi_i\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
+\mathbf{F}_\Gamma = \oint_\Gamma \left[n_x\displaystyle\sum\limits_{i=1}^m\omega_i\phi_i\left(k_x\frac{\partial T}{\partial x}\right) + n_y\displaystyle\sum\limits_{i=1}^m\omega_i\phi_i\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
 \]
 \noindent where this is a system of equations and $\omega_i$ will cancel out as before:
 \[
-F_{\Gamma,i} = \oint_\Gamma \left[n_x\phi_i\left(k_x\frac{\partial T}{\partial x}\right) + n_y\phi_i\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
+\mathbf{F}_{\Gamma,i} = \oint_\Gamma \left[n_x\phi_i\left(k_x\frac{\partial T}{\partial x}\right) + n_y\phi_i\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
 \]
 
-\noindent This integral may then be further simplified by considering each boundary region in turn, with the right hand side $F_i$ (given in equation \ref{equ:Fi}) being modified by $F_{\Gamma,i}$ as:
+\noindent This integral may then be further simplified by considering each boundary region in turn, with the right hand side $\mathbf{F}_i$ (given in equation \ref{equ:Fi}) being modified by $\mathbf{F}_{\Gamma,i}$ as:
 \[
-\boxed{F_i = F_i + \displaystyle\sum\limits_{b=1}^3 F_{\Gamma_b,i}}
+\boxed{\mathbf{F}_i = \mathbf{F}_i + \displaystyle\sum\limits_{b=1}^3 \mathbf{F}_{\Gamma_b,i}}
 \]
 
 \subsubsection{Boundary 1 (Heat Flux)}
 Boundary 1 exists solely on the domain where $x=0$, with $y \in (0, 1)$, thus $\Gamma = y \in (0, 1)$ and $d\Gamma = dy$. Further, along this boundary, $\vec{n} = \left(-1,0\right)$ such that $n_x=-1$ and $n_y$ = 0. The right hand side contribution of the boundary term along this boundary thus becomes:
-\[F_{\Gamma_1,i} = -\int_0^1 \phi_i\left(k_x\frac{\partial T}{\partial x}\right)dy\]
+\[\mathbf{F}_{\Gamma_1,i} = -\int_0^1 \phi_i\left(k_x\frac{\partial T}{\partial x}\right)dy\]
 We can now note the given boundary condition:
 \[k_x\frac{\partial T}{\partial x} = B \left(1-y\right) \unit{}{W/m^2}\]
 Such that the extra right hand side contribution along this boundary is:
 \begin{equation}
 \label{equ:F1i}
-\boxed{F_{\Gamma_1,i} = -\int_0^1 B \phi_i \left(1-y\right)dy}
+\boxed{\mathbf{F}_{\Gamma_1,i} = -\int_0^1 B \phi_i \left(1-y\right)dy}
 \end{equation}
 
 \subsubsection{Boundary 2 (Insulation)}
@@ -263,11 +264,11 @@ Along boundary 2, there is a prescibed insulated boundary, meaning that:
 \[k_y\frac{\partial T}{\partial y} = \unit{0}{W/m^2}\]
 \noindent Thus straight away we can see that there will be zero contribution from the boundary terms along boundary 2:
 \[
-F_{\Gamma_2,i} = \oint_\Gamma \left[n_x\phi_i\cancelto{0}{\left(k_x\frac{\partial T}{\partial x}\right)} + n_y\phi_i\cancelto{0}{\left(k_y\frac{\partial T}{\partial y}\right)}\right]d\Gamma
+\mathbf{F}_{\Gamma_2,i} = \oint_\Gamma \left[n_x\phi_i\cancelto{0}{\left(k_x\frac{\partial T}{\partial x}\right)} + n_y\phi_i\cancelto{0}{\left(k_y\frac{\partial T}{\partial y}\right)}\right]d\Gamma
 \]
 \begin{equation}
 \label{equ:F2i}
-\boxed{F_{\Gamma_2,i} = 0}
+\boxed{\mathbf{F}_{\Gamma_2,i} = 0}
 \end{equation}
 
 \subsubsection{Boundary 3 (Constant Temperature)}
@@ -275,14 +276,75 @@ Along boundary 3, there is a constant Dirichlet boundary condition, meaning the 
 \[\phi_i = 0\]
 \noindent Similar to the result in boundary 2 then, we can see that there will be zero contribution from the boundary terms along boundary 3:
 \[
-F_{\Gamma_3,i} = \oint_\Gamma \left[n_x\cancelto{0}{\phi_i}\left(k_x\frac{\partial T}{\partial x}\right) + n_y\cancelto{0}{\phi_i}\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
+\mathbf{F}_{\Gamma_3,i} = \oint_\Gamma \left[n_x\cancelto{0}{\phi_i}\left(k_x\frac{\partial T}{\partial x}\right) + n_y\cancelto{0}{\phi_i}\left(k_y\frac{\partial T}{\partial y}\right)\right]d\Gamma
 \]
 \begin{equation}
 \label{equ:F3i}
-\boxed{F_{\Gamma_3,i} = 0}
+\boxed{\mathbf{F}_{\Gamma_3,i} = 0}
 \end{equation}
 
 \subsection{Numerical Integration Formulation}
+In order to evaluate the integrals given in equations \ref{equ:Kij}, \ref{equ:Fi} and \ref{equ:F1i}, it is prudent to use numerical integration schemes that can be easily implemented in a computer. A common numerical integration scheme is to use Gauss-Legendre quadrature, where:
+\begin{equation}
+\label{equ:gauss_quadrature}
+\int_{-1}^1 F(x)dx \approx \sum_{i=1}^mF(x_i)\cdot w_i
+\end{equation}
+\noindent where $x_i$ are weighting anchors that depend on $n$ and $w_i$ are weighting coefficients that also depend on $n$.
+
+Unfortunately, to use this integration scheme, the integration limits must be $(-1,1)$. To achieve this, an iso-parametric mapping of the element domains must be done from their natural domains to the domain $\left((-1,-1),(1,1)\right)$. This mapping is performed through the functions:
+\[X(\zeta,\eta) = \sum x_i \psi_i(\zeta,\eta)\]
+\[Y(\zeta,\eta) = \sum y_i \psi_i(\zeta,\eta)\]
+\noindent where $\psi_i$ are termed the ``shape functions'' for a given type and order of the elements used in the approximation.
+
+Using this mapping, integrals over the element domain may be transferred into integrations over our numerical integration domain using:
+\[
+\int_{\Omega^e} f(x,y)d\Omega^e = \int_{\hat{\Omega}^e}f\left[X(\zeta,\eta),Y(\zeta,\eta)\right]\left|J(\zeta,\eta)\right|d\zeta d\eta
+\]
+\noindent where $\left|J(\zeta,\eta)\right|$ is the determinant of the Jacobian matrix and is defined as:
+\[
+\left|J(\zeta,\eta)\right| = \det \left[\begin{array}{cc}
+\frac{\partial X}{\partial \zeta} & \frac{\partial Y}{\partial \zeta} \\
+\frac{\partial X}{\partial \eta} & \frac{\partial Y}{\partial \eta} \\
+\end{array}\right]
+\]
+
+Now, if we substitute this back into equation \ref{equ:gauss_quadrature} we get that a function can be approximated as such:
+\begin{equation}
+\label{equ:numint}
+\begin{split}
+	\int_{\Omega^e} f(x,y)d\Omega^e &= \int_{\hat{\Omega}^e}f\left[X(\zeta,\eta),Y(\zeta,\eta)\right]\cdot\left|J(\zeta,\eta)\right|d\zeta d\eta \\
+	&= \int_{-1}^{1}\int_{-1}^1f\left[X(\zeta,\eta),Y(\zeta,\eta)\right]\cdot\left|J(\zeta,\eta)\right|d\zeta d\eta \\
+	&\approx \sum_{i=1}^m\sum_{j=1}^n\left\{f\left[X(\zeta_i,\eta_j),Y(\zeta_i,\eta_j)\right]\cdot\left|J(\zeta_i,\eta_j)\right| \cdot w_j \right\}\cdot w_i
+\end{split}
+\end{equation}
+
+Now, applying equation \ref{equ:numint} to equations \ref{equ:Kij}, \ref{equ:Fi} and \ref{equ:F1i}, we arrive at the following approximations:
+\begin{equation}
+\label{equ:Kij_quad}
+\begin{split}
+	\mathbf{K}_{ij} &= \int_\Omega \left[ \frac{\partial \phi_i}{\partial x}\left(k_x\frac{\partial \phi_j}{\partial x}\right) + \frac{\partial \phi_i}{\partial y}\left(k_y\frac{\partial \phi_j}{\partial y}\right) \right]d\Omega \\
+	&= \int_{-1}^1\int_{-1}^1 \left[ \frac{\partial \phi_i\left(\zeta,\eta\right)}{\partial \zeta}\left(k_x\frac{\partial \phi_j\left(\zeta,\eta\right)}{\partial \zeta}\right) + \frac{\partial \phi_i\left(\zeta,\eta\right)}{\partial \eta}\left(k_y\frac{\partial \phi_j\left(\zeta,\eta\right)}{\partial \eta}\right) \right]\cdot\left|J\left(\zeta,\eta\right)\right|d\zeta d\eta \\
+	&\approx \sum_{p=1}^m\sum_{q=1}^n \left[\frac{\partial \phi_i\left(\zeta_p,\eta_q\right)}{\partial \zeta}\left(k_x\frac{\partial \phi_j\left(\zeta_p,\eta_q\right)}{\partial \zeta}\right) + \frac{\partial \phi_i\left(\zeta_p,\eta_q\right)}{\partial \eta}\left(k_y\frac{\partial \phi_j\left(\zeta_p,\eta_q\right)}{\partial \eta}\right) \right]\cdot\left|J\left(\zeta_i,\eta_j\right)\right|\cdot w_pw_q
+\end{split}
+\end{equation}
+
+\begin{equation}
+\label{equ:Fi_quad}
+\begin{split}
+	\mathbf{F}_i &= \int_\Omega \phi_if(x,y)d\Omega \\
+	&= \int_{-1}^1\int_{-1}^1 \phi_i\left(\zeta,\eta\right)f\left(X(\zeta,\eta),Y(\zeta,\eta)\right)\cdot \left|J\left(\zeta,\eta\right)\right|d\zeta d\eta \\
+	&\approx \sum_{p=1}^m\sum_{q=1}^n\phi_i\left(\zeta_p,\eta_q\right)f\left(X(\zeta_p,\eta_q),Y(\zeta_p,\eta_q)\right)\cdot \left|J\left(\zeta_p,\eta_q\right)\right| \cdot w_jw_i
+\end{split}
+\end{equation}
+
+\begin{equation}
+\label{equ:F1i_quad}
+\begin{split}
+	\mathbf{F}_{\Gamma_1,i} &= -\int_0^1 B \phi_i \left(1-y\right)dy \\
+	&= \int_{-1}^1 B\phi_i\left(\eta\right)\left(1-Y(\eta)\right)\cdot \left|J\left(\zeta,\eta\right)\right|d\eta \\
+	&\approx \sum_{q=1}^n B\phi_i\left(\eta_q\right)\left(1-Y(\eta_q)\right)\cdot \left|J\left(\zeta_p,\eta_q\right)\right|\cdot w_q
+\end{split}
+\end{equation}
 
 \section{Discretization of the Domain}
 The domain can naturally be split in to two regions to accomodate the unique set of boundaries for this problem (see figure \ref{fig:domain} for boundary location information). A ``coarse'' grid which defines two elements and their appropriate boundaries is given in figure \ref{fig:grid_r0}.
@@ -307,13 +369,15 @@ Such a coarse grid provides very little detail about the solution and is a poor 
 \end{figure}
 
 \section{Computer Implementation of the Problem}
-Using the open-source C++ finite-element library \emph{deal.II}, a program was created to implement equations \ref{} over the meshes given in figure \ref{fig:meshs}. The complete source code package is included in appendix \ref{app:source} and has been successfully compiled and run using deal.II version 7.1.0 on linux (Ubuntu 12.04) compiled with UMFPACK support.
+Using the open-source C++ finite-element library \emph{deal.II}, a program was created to implement equations \ref{equ:Kij_quad}, \ref{equ:Fi_quad} and \ref{equ:F1i_quad} over the meshes given in figure \ref{fig:meshs}. The complete source code package is included in appendix \ref{app:source} and has been successfully compiled and run using deal.II version 7.1.0 on linux (Ubuntu 12.04) compiled with UMFPACK support.
+
+Compiling the source code begins with placing the files ``project.cc'', ``project.ucd'', and ``Makefile'' in a directory called ''hamaluik\_project'' located in a directory called ``projects'', which is itself located in the base \emph{deal.II} installation directory. Once these files are in place and all dependencies are installed (i.e., \emph{deal.II} is configured and built with UMFPACK support), entering the command ``make'' at the command line will compile and link the program.
 
 Once the program is appropriately compiled and linked, it is run through the command line, making use of gnu-style command line options and parameters. These options and parameters are outlined in table \ref{tab:commandlineoptions}.
 
 \begin{table}[H]
 \centering
-\caption{Command line options for running the model}
+\caption{Command line options for running the program}
 \label{tab:commandlineoptions}
 \begin{tabular}{ll}
 \hline \hline
@@ -350,6 +414,33 @@ Where ``[options]'' is a list of flags and parameter definitions as defined in t
 \subsection{Examples of Use}
 To facilitate understanding of how this program is executed and a given model is solved, some simple run-time examples are included here.
 
+\subsection{Obtaining the Help Menu}
+To view the help menu for the program for information on the various parameters, their effects, and default values, we call the program using the ``-h'' flag as such:
+\vspace{-6mm}
+\begin{lstlisting}[numbers=none,frame=none,language=bash]
+./project -h
+\end{lstlisting}
+\vspace{1mm}
+
+This will result in the following being printed to the screen:
+\vspace{-6mm}
+\begin{lstlisting}[numbers=none,frame=none,language=bash,keywordstyle=none]
+Usage: ./project [OPTIONS] [SOLUTION.vtk]
+-- Options (defaults) --
+	-?		show this help menu
+	-r <level>	refine the mesh <level> times (0)
+	-f		write the generated mesh to file for visualization (false)
+	-s		solve the problem (false)
+	-q <num|auto>	use <num> quadrature points for solution (or auto-calculate based on order) (auto)
+	-o <order>	set the Lagrange polynomial order to <order> (1)
+	-x <Kx>		set the Kx value (15)
+	-y <Ky>		set the Ky value (25)
+	-A <A>		set the A value (5000)
+	-B <B>		set the B value (50)
+	-T <temp>	set the temperature at boundary 3 (400)
+\end{lstlisting}
+\vspace{1mm}
+
 \subsubsection{Obtaining Mesh Visualizations for Various Mesh Refinement Levels}
 In order to obtain the mesh illustrations provided in figures \ref{fig:grid_r0} and \ref{fig:meshs}, the following commands were used.
 
@@ -370,7 +461,7 @@ Similary, to produce a visualization of the highest mesh refinement examined (4 
 Note that in these examples, only the mesh is assembled and output for visualization --- the program does not attempt to solve anything.
 
 \subsubsection{Solving the Problem}
-The ``default problem'' is defined as solving equations \ref{} over the coarse domain illustrated in figure \ref{fig:grid_r0}, using first-order Lagrange interpolation functions, setting $A=\unit{5000}{W/m^5}$ and all other constants at their values defined in section \ref{sec:definition}. This ``default problem'' can be solved with its output being saved in ``solution.vtk'' by executing the following command:
+The ``default problem'' is defined as solving equations \ref{equ:Kij_quad}, \ref{equ:Fi_quad} and \ref{equ:F1i_quad} over the coarse domain illustrated in figure \ref{fig:grid_r0}, using first-order Lagrange interpolation functions, setting $A=\unit{5000}{W/m^5}$ and all other constants at their values defined in section \ref{sec:definition}. This ``default problem'' can be solved with its output being saved in ``solution.vtk'' by executing the following command:
 \vspace{-6mm}
 \begin{lstlisting}[numbers=none,frame=none,language=bash]
 ./project -s
@@ -431,7 +522,7 @@ To study the effect of h-refinement on the solution (that is, the effect of usin
 	\label{fig:h_refinement}
 \end{figure}
 
-As can be seen in figure \ref{fig:h_refinement}, increasing the mesh density (and subsequently, the number of degrees of freedom) results in an increased temperature up to a point. It is extremely important to note the ``law of diminishing returns here'' --- once the number of degrees of freedom reaches a certain level, refining the mesh will provide no significant change in the temperature at the queried point. In this model, this point happens with approximately 3 h-refinements resulting in 128 elements or 153 degrees of freedom. We can see very plainly from this plot that nearly quadrupling the number of degrees of freedom past this point will not significantly change the approximated temperature distribution in the domain. Therefore, we can say that the model has sufficiently converged after 3 h-refinements, or with 153 degrees of freedom approximating the temperature distribution.
+As can be seen in figure \ref{fig:h_refinement}, increasing the mesh density (and subsequently, the number of degrees of freedom) results in an increased temperature up to a point. It is extremely important to note the ``law of diminishing returns'' here --- once the number of degrees of freedom reaches a certain level, refining the mesh will provide no significant change in the temperature at the queried point. In this model, this point happens with approximately 3 h-refinements resulting in 128 elements or 153 degrees of freedom. We can see very plainly from this plot that nearly quadrupling the number of degrees of freedom past this point will not significantly change the approximated temperature distribution in the domain. Therefore, we can say that the model has sufficiently converged after 3 h-refinements, or with 153 degrees of freedom approximating the temperature distribution.
 
 \subsection{P-Refinement}
 To study the effect of p-refinement on the solution (that is, the effect of using higher-order Lagrange interpolation polynomials to approximate the solution), the temperature at the given point was calculated using polynomials of order 1 -- 4 for various levels of h-refinement (the same h-refinements that were performed in section \ref{sec:h_refine}). The temperature of the selected point was then plotted as a function of the number of degrees of freedom resulting in the model (higher order Lagrange interpolation polynomials result in larger numbers of degrees of freedom) to obtain the plot illustrated in figure \ref{fig:p_refinement}.
@@ -478,7 +569,27 @@ For more detailed information about the temperature distribution throughout the 
 
 As can be seen in figure \ref{fig:para}, when $A$ is not \unit{0}{W/m^5} the temperature distribution assumes an identical shape distribution, with only the magnitude of the temperature changing. However, as can be seen in figure \ref{fig:sa0}, when there is 0 heat generation throughout the domain, the temperature distribution is rather different, with heat visibly flowing through the domain from boundary 3 to boundary 1. In Figure \ref{fig:sa0}, it is also easy to see the effect of the variable heat flux boundary condition:
 \[k_x\frac{\partial T}{\partial x} = B \left(1-y\right) \unit{}{W/m^2}\]
-\noindent This shows us that there will be the greatest amount of heat flux leaving the problem domain where $y=0$ along boundary 1, which is indeed the coldest location in the domain when $A=\unit{0}{W/m^5}$.
+\noindent This shows us that there will be the greatest amount of heat flux leaving the problem domain where $y=0$ along boundary 1, which is indeed the coldest location in the domain when $A=\unit{0}{W/m^5}$. For the other cases where $A > \unit{0}{W/m^5}$, it is difficult to see from the entire temperature distribution the effect of the variable heat flux condition on boundary 1 (due to the scale of the temperature ranges). However, obtaining a plot of temperature as a function of the y-coordinate along boundary 1 (where $x=0$) sheds some insight as is seen in figure \ref{fig:y_temp} (plotted for the case where $A=\unit{5000}{W/m^5}$).
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{y_temp.pdf}
+	\caption{Temperature profile along $y$ axis at $x=\unit{0}{m}$}
+	\label{fig:y_temp}
+\end{figure}
+
+As is seen in figure \ref{fig:y_temp}, the temperature does indeed change along boundary 1. However, the temperature profile here is somewhat ``opposite'' to what is expected --- at $y=0$, we expect the lowest temperature as this is where the greatest heat flux occurs. We must look beyond this, however, and realize that the prescribed temperature of \unit{400}{K} along boundary 3 (which is at the top of the model) will ``override'' this heat flux and cause lower temperatures at the top of the model, rather than the bottom.
+
+The effect of varying $A$ can also be considered by plotting the temperature distribution in a single dimension (in this case, the $x$ dimension) of the domain. To do this, a line going through the center of the problem domain at $y=\unit{0.5}{m}$ with $x\in\unit{(0, 2.5)}{m}$ was chosen and is illustrated in figure \ref{fig:studyline}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.75\textwidth]{studyline.png}
+	\caption{Location of line along which temperature is evaluated}
+	\label{fig:studyline}
+\end{figure}
+
+The temperature profile along this line was then recorded for $A$ varying between \unit{0}{W/m^5} -- \unit{5000}{W/m^5}, and is illustrated in figure \ref{fig:a_study}.
 
 \begin{figure}[H]
 	\centering
@@ -486,6 +597,8 @@ As can be seen in figure \ref{fig:para}, when $A$ is not \unit{0}{W/m^5} the tem
 	\caption{Temperature profile along $x$ axis at $y=\unit{0.5}{m}$}
 	\label{fig:a_study}
 \end{figure}
+
+From figure \ref{fig:a_study}, it is clear the see the effect of increasing $A$ --- as $A$ is increased, the temperature profile across the entire domain increases while the gradient effect of the $x^2$ term becomes more and more apparent. That is, the temperature gradient at higher $A$ is significantly greater than the temperature gradient at lower $A$.
 
 \pagebreak
 \appendix
@@ -504,5 +617,15 @@ As can be seen in figure \ref{fig:para}, when $A$ is not \unit{0}{W/m^5} the tem
 \lstinputlisting[title=project.ucd]{../project.ucd}
 \subsection{Makefile}
 \lstinputlisting[title=Makefile,language=make]{../Makefile}
+
+\pagebreak
+\section{Declaration Form}
+\begin{center}
+{%
+\setlength{\fboxsep}{0pt}%
+\setlength{\fboxrule}{1pt}%
+\fbox{\includegraphics[width=0.99\textwidth]{declaration.pdf}}%
+}%
+\end{center}
 
 \end{document}
