@@ -101,7 +101,7 @@ private:
 double Project::systemValue(FEValues<2> &feValues, unsigned int i, unsigned int j, unsigned int q) {
 	// ((d/dx)phi_i * Kx * (d/dx)phi_j) + ((d/dy)phi_i * Ky * (d/dy)phi_j)
 	return	((feValues.shape_grad(i, q)[0] * Kx * feValues.shape_grad(j, q)[0])
-	+	(feValues.shape_grad(i, q)[1] * Ky * feValues.shape_grad(j, q)[1]) * feValues.JxW(q));
+		+	(feValues.shape_grad(i, q)[1] * Ky * feValues.shape_grad(j, q)[1])) * feValues.JxW(q);
 }
 
 // define the RHS portion of the weak formulation of the PDE here
