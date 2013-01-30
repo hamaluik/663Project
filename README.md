@@ -27,19 +27,19 @@ The program may be invoked and produce a solution using the following syntax:
 	./project [OPTIONS] [SOLUTION_FILE.vtk]
 Where both [OPTIONS] and [SOLUTION_FILE.vtk] are optional parameters. [OPTIONS] follows unix-style command-line
 options, with the following values being accepted:
-	-?		shows a help menu
-	-r <num>	refines the mesh <num> times (defaults to 0)
-	-f		write the generated mesh to file for visualization
-	-s		actually solve the problem
-	-q <num|auto>	allows you to manually specify the number of quadrature points used (defaults to auto)
-	-i <num>	set the maximum number of CG iterations performed for the solution (defaults to 1000)
-	-t <tol>	set the tolerance for the residual in the CG solution (defaults to 1e-12)
-	-o <order>	set the Lagrange interpolation polynomial order (defaults to 1)
-	-x <Kx>		set the Kx value (defaults to 15)
-	-y <Ky>		set the Ky value (defaults to 25)
-	-A <A>		set the A value (defaults to 5000)
-	-B <B>		set the B value (defaults to 50)
-	-T <temp>	set the boundary temperature at the Dirichlet boundary (defaults to 400)
+* -?		shows a help menu
+* -r <num>	refines the mesh <num> times (defaults to 0)
+* -f		write the generated mesh to file for visualization
+* -s		actually solve the problem
+* -q <num|auto>	allows you to manually specify the number of quadrature points used (defaults to auto)
+* -i <num>	set the maximum number of CG iterations performed for the solution (defaults to 1000)
+* -t <tol>	set the tolerance for the residual in the CG solution (defaults to 1e-12)
+* -o <order>	set the Lagrange interpolation polynomial order (defaults to 1)
+* -x <Kx>		set the Kx value (defaults to 15)
+* -y <Ky>		set the Ky value (defaults to 25)
+* -A <A>		set the A value (defaults to 5000)
+* -B <B>		set the B value (defaults to 50)
+* -T <temp>	set the boundary temperature at the Dirichlet boundary (defaults to 400)
 
 If [SOLUTION_FILE.vtk] is specified, the solution will be graphically written to the specified file (in VTK
 format). If it **is not** specified and a solution is performed, the solution will be written to "solution.vtk",
